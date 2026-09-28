@@ -1,7 +1,7 @@
 // ✅ Find & Replace Text – Rhino 8 Grasshopper C#
 // Author: Rajeev Pulari + ChatGPT
-// Inputs: T (list of strings), F (list of find strings), R (list of replace strings)
-// Output: Txt (list of replaced strings)
+// Inputs: T (item access, one string per run), F (list of find strings), R (list of replace strings)
+// Output: Txt (one processed string per run — Grasshopper matches it to T's list shape automatically)
 
 using System;
 using System.Collections;
@@ -19,15 +19,19 @@ public class Script_Instance : GH_ScriptInstance
         Component.Message = "Find&Replace v1.0";
         Component.NickName = "Find&Replace";
 
-    // --- Convert all inputs ---
-    List<string> textList = ToStringList(T);
+    // T is item access: Grasshopper calls RunScript once per entry in the
+    // input list and reassembles the outputs into a matching list on its
+    // own, as long as Txt stays a single value per call (not a list) --
+    // that's what keeps the output list shaped like the input instead of
+    // nesting each result into its own one-item branch.
+    string text = T == null ? "" : T.ToString();
+
     List<string> findList = ToStringList(F);
     List<string> replList = ToStringList(R);
 
-    // --- Safety check ---
-    if (textList.Count == 0 || findList.Count == 0)
+    if (findList.Count == 0)
     {
-      Txt = new List<string>() { "⚠ Empty input list(s)" };
+      Txt = text; // nothing to find/replace: pass the text through unchanged
       return;
     }
 
@@ -37,23 +41,17 @@ public class Script_Instance : GH_ScriptInstance
       replList.Add(last);
 
     // --- Perform find & replace ---
-    List<string> result = new List<string>();
-
-    foreach (string s in textList)
+    string modified = text;
+    for (int i = 0; i < findList.Count; i++)
     {
-      string modified = s;
-      for (int i = 0; i < findList.Count; i++)
-      {
-        string find = findList[i];
-        string replace = replList[i];
-        if (!string.IsNullOrEmpty(find))
-          modified = modified.Replace(find, replace);
-      }
-      result.Add(modified);
+      string find = findList[i];
+      string replace = replList[i];
+      if (!string.IsNullOrEmpty(find))
+        modified = modified.Replace(find, replace);
     }
 
     // --- Output ---
-    Txt = result;
+    Txt = modified;
   }
 
   // <Custom additional code>
