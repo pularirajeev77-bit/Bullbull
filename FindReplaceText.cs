@@ -11,8 +11,8 @@ public class Script_Instance : GH_ScriptInstance
 {
   private void RunScript(
 		object T,
-		object F,
-		object R,
+		List<object> F,
+		List<object> R,
 		ref object Txt)
   {
     // Set Component Metadata (Rhino 8 feature)
