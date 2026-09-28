@@ -5,6 +5,7 @@ checking curves, and making lines from points.
 
 Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEXT) (text tools) ·
 [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) (polyline frames) ·
+[`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) (weight/area/volume) ·
 [`main`](https://github.com/pularirajeev77-bit/Bullbull/tree/main) (overview)
 
 ## How to use a script
