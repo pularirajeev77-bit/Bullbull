@@ -1,7 +1,7 @@
 # Bullbull — `curves` branch
 
-C# script components for **Rhino 8 Grasshopper**: dividing, classifying curves
-and making lines from points.
+C# script components for **Rhino 8 Grasshopper**: dividing, classifying and
+checking curves, and making lines from points.
 
 Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEXT) (text tools) ·
 [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) (polyline frames) ·
@@ -26,6 +26,7 @@ and keeps your list/tree shape) · **list** = the whole list at once ·
 | [CenterDiv](#centerdiv) | `CenterDivide.cs` | Divides a curve symmetrically from its middle |
 | [PVL](#pvl) | `PVL.cs` | Lines from a point, a direction and a length |
 | [CrvClass](#crvclass) | `CurveClassifier.cs` | Sorts curves by type: line, polyline, arc, circle, ellipse … |
+| [IntAng](#intang) | `InternalAngleFilter.cs` | Finds the sharp corners of a polyline |
 
 ---
 
@@ -135,3 +136,35 @@ arc, circle, ellipse, elliptical arc, polycurve or other.
 - A straight polyline (all points in a line) counts as a **Line**.
 - An empty item in the input gives an empty item in `Type`, so `Type` stays
   lined up with the input.
+
+---
+
+## IntAng
+
+**File:** `InternalAngleFilter.cs`
+
+Finds the **sharp corners** of a polyline: every vertex whose inside angle is
+smaller than `Ang`. Useful for spotting corners that are too tight to
+fabricate, weld or bend.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Crv` | item | A polyline (a list works; you get one branch per curve) |
+| `Ang` | item | Angle limit, **in radians** (90° = π/2 ≈ 1.5708) |
+
+| Output | Meaning |
+|---|---|
+| `P` | The corner points with an angle smaller than `Ang` |
+| `N` | At each of those corners, the direction splitting the angle in half, pointing inside the shape |
+| `t` | Where each corner is on the curve (curve parameter) |
+
+**Example:** a rectangle with `Ang = 1.6` (≈ 92°) → all 4 corners (90° each).
+
+**Good to know**
+- **Closed polylines:** the real inside angle is used, 0–360°. The concave
+  corner of an L-shape is 270°, so it is not flagged as sharp.
+- **Open polylines:** there is no inside, so the angle between the two edges
+  (0–180°) is used; the two end points are never flagged.
+- Radians, not degrees: to use degrees, put a *Radians* component in front.
+- Curves that are not polylines (arcs, NURBS) give empty output.
+- Doubled points are merged first, so a corner drawn with a repeated point is still found.
