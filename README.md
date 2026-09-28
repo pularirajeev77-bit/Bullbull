@@ -10,7 +10,7 @@ topic into branches — switch branch to see the code and full instructions.
 |---|---|
 | [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEXT) | Name-Format, Find&Replace, Search Text, Multi > Single-Line-Text, Single > Multi-Line-Text, GetNumbers, GetText, Plane><Text, Leader Points |
 | [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) | Bisect Frame |
-| [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) | CenterDiv, PVL, CrvClass, IntAng |
+| [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) | CenterDiv, PVL, CrvClass, IntAng, IntAngDom |
 
 ## All components
 
@@ -30,6 +30,7 @@ topic into branches — switch branch to see the code and full instructions.
 | PVL | `curves` | Lines from a point, a direction and a length |
 | CrvClass | `curves` | Sorts curves by type: line, polyline, arc, circle, ellipse … |
 | IntAng | `curves` | Finds the sharp corners of a polyline |
+| IntAngDom | `curves` | Finds polyline corners whose angle is within a range |
 
 ## How to use a script
 
