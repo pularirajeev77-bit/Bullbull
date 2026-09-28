@@ -1,39 +1,11 @@
-# Bullbull
-Rhino grasshopper codes
+# Bullbull — `utility` branch
 
-C# script components for **Rhino 8 Grasshopper**. The scripts are grouped by
-topic into branches — switch branch to see the code and full instructions.
+C# script components for **Rhino 8 Grasshopper**: general utilities.
 
-## Branches
-
-| Branch | Components |
-|---|---|
-| [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEXT) | Name-Format, Find&Replace, Search Text, Multi > Single-Line-Text, Single > Multi-Line-Text, GetNumbers, GetText, Plane><Text, Leader Points |
-| [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) | Bisect Frame |
-| [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) | CenterDiv, PVL, CrvClass, IntAng, IntAngDom, AdaptDiv, PolyPlus, VarChamfer |
-
-## All components
-
-| Component | Branch | What it does |
-|---|---|---|
-| Name-Format | `TEXT` | Sequential names like `B001, B002, B003` |
-| Find&Replace | `TEXT` | Replaces several words in text at once |
-| Search Text | `TEXT` | True/false: does the text contain any of the words? |
-| Multi > Single-Line-Text | `TEXT` | Joins a list of lines into one text |
-| Single > Multi-Line-Text | `TEXT` | Splits text into separate lines |
-| GetNumbers | `TEXT` | Pulls the numbers out of text (`M20x100` → `20, 100`) |
-| GetText | `TEXT` | Keeps only the letters (`Beam 12 Column` → `Beam Column`) |
-| Plane><Text | `TEXT` | Plane → text and text → plane, for storing planes in Excel/CSV |
-| Leader Points | `TEXT` | Leader line with a landing leg, from a plane |
-| Bisect Frame | `Vector` | Point, bisector vector and plane at every polyline vertex |
-| CenterDiv | `curves` | Divides a curve symmetrically from its middle |
-| PVL | `curves` | Lines from a point, a direction and a length |
-| CrvClass | `curves` | Sorts curves by type: line, polyline, arc, circle, ellipse … |
-| IntAng | `curves` | Finds the sharp corners of a polyline |
-| IntAngDom | `curves` | Finds polyline corners whose angle is within a range |
-| AdaptDiv | `curves` | Divides a curve with more points where it bends more |
-| PolyPlus | `curves` | Polyline through points, with chosen stretches as arcs |
-| VarChamfer | `curves` | Chamfers chosen polyline corners, each with its own distance |
+Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEXT) (text tools) ·
+[`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) (polyline frames) ·
+[`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) (curve division, lines from points) ·
+[`main`](https://github.com/pularirajeev77-bit/Bullbull/tree/main) (overview)
 
 ## How to use a script
 
@@ -42,4 +14,44 @@ topic into branches — switch branch to see the code and full instructions.
 3. The component takes its inputs and outputs from the `RunScript(...)` line.
    If they don't appear, add them by hand with the exact same names.
 
-Each branch's README explains every input, output and option of its components.
+**Access types** used below:
+**item** = one value at a time · **list** = the whole list at once.
+
+## Components
+
+| Component | File | What it does |
+|---|---|---|
+| [Calci](#calci) | `BullbullCalculation.cs` | Weight, area and volume of solids (Breps) |
+
+---
+
+## Calci
+
+**File:** `BullbullCalculation.cs`
+
+For each solid (Brep), works out its **weight, surface area and volume** in
+metric units. Useful for quick material take-offs and mass estimates.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Breps` | list | The solids to measure |
+| `Density` | item | Material density in **kg/m³** (e.g. steel ≈ 7850, concrete ≈ 2400) |
+| `ModelUnits` | item | Your Rhino file's units: `mm`, `cm` or `m` |
+
+| Output | Meaning |
+|---|---|
+| `Wt` | Weight in kilograms (volume in m³ × `Density`) |
+| `Area` | Surface area in square metres (m²) |
+| `Vol` | Volume in cubic metres (m³) |
+| `VolRaw` | Volume in the model's own units, before conversion |
+
+**Example:** a steel block, `Density = 7850`, `ModelUnits = mm` → `Wt` in kg,
+`Area` in m², `Vol` in m³.
+
+**Good to know**
+- `ModelUnits` must be one of `mm`, `cm` or `m`. **Any other value gives 0**
+  for area, volume and weight — so make sure it matches your Rhino file.
+- Set `Density` to match the units you want: `kg/m³` gives kilograms.
+- An invalid or open Brep gives `NaN` (not-a-number) for that item, so the
+  outputs stay lined up with the input list.
+- No input gives empty lists.
