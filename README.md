@@ -1,7 +1,7 @@
 # Bullbull — `curves` branch
 
-C# script components for **Rhino 8 Grasshopper**: dividing curves and making
-lines from points.
+C# script components for **Rhino 8 Grasshopper**: dividing, classifying curves
+and making lines from points.
 
 Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEXT) (text tools) ·
 [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) (polyline frames) ·
@@ -25,6 +25,7 @@ and keeps your list/tree shape) · **list** = the whole list at once ·
 |---|---|---|
 | [CenterDiv](#centerdiv) | `CenterDivide.cs` | Divides a curve symmetrically from its middle |
 | [PVL](#pvl) | `PVL.cs` | Lines from a point, a direction and a length |
+| [CrvClass](#crvclass) | `CurveClassifier.cs` | Sorts curves by type: line, polyline, arc, circle, ellipse … |
 
 ---
 
@@ -91,3 +92,46 @@ From a **point**, a **direction vector** and a **length**, makes three lines:
   so the outputs stay lined up with the inputs.
 - A negative length flips the lines to the other side.
 - If any input is unplugged, the component shows an orange warning.
+
+---
+
+## CrvClass
+
+**File:** `CurveClassifier.cs`
+
+Looks at each curve's **shape** and sorts it into a group: line, polyline,
+arc, circle, ellipse, elliptical arc, polycurve or other.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Crv` | tree | The curves (a single curve or a list works too) |
+
+| Output | Meaning |
+|---|---|
+| `Type` | The type name of every curve, in input order |
+| `Lines` | Straight curves |
+| `Polylines` | Polylines with 3 or more points |
+| `Arcs` | Open arcs |
+| `Circles` | Full circles |
+| `Ellipses` | Closed ellipses |
+| `EllipticalArcs` | Open parts of an ellipse |
+| `PolyCurves` | Joined curves that are none of the above |
+| `Others` | Everything else (e.g. free-form NURBS) |
+
+**How a curve is classified** (first match wins, in this order)
+
+1. **Line** — straight, whatever it was made as (line, 2-point polyline, straight NURBS)
+2. **Polyline** — made only of straight segments
+3. **Circle** / **Arc** — a circle or part of one
+4. **Ellipse** / **EllipticalArc** — an ellipse or part of one
+5. **PolyCurve** — joined curve that is none of the above
+6. **Other**
+
+**Good to know**
+- Outputs keep the input's branch structure. An output with no curves of its
+  type stays empty.
+- Shapes are checked within the model tolerance, so curves from imports that
+  are *almost* an arc or line are still recognised.
+- A straight polyline (all points in a line) counts as a **Line**.
+- An empty item in the input gives an empty item in `Type`, so `Type` stays
+  lined up with the input.
