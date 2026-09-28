@@ -34,6 +34,17 @@ public class Script_Instance : GH_ScriptInstance
             this.Component.Message = "Calculator 2.0";
             this.Component.NickName = "Calci";
             this.Component.Name = "Calci";
+            this.Component.Description = "Weight, area and volume of solids (Breps).";
+
+            // Tooltips: hover text shown on each input/output pin. Set once,
+            // inside the same guard, so it isn't rewritten every solution.
+            SetTip(this.Component.Params.Input,  0, "Breps",      "Solids to measure (list).");
+            SetTip(this.Component.Params.Input,  1, "Density",    "Material density in kg/m3 (steel ~ 7850, concrete ~ 2400).");
+            SetTip(this.Component.Params.Input,  2, "ModelUnits", "Rhino file units: mm, cm or m. Anything else gives 0.");
+            SetTip(this.Component.Params.Output, 0, "Wt",         "Weight in kilograms (volume in m3 x Density).");
+            SetTip(this.Component.Params.Output, 1, "Area",       "Surface area in square metres (m2).");
+            SetTip(this.Component.Params.Output, 2, "Vol",        "Volume in cubic metres (m3).");
+            SetTip(this.Component.Params.Output, 3, "VolRaw",     "Volume in the model's own units, before conversion.");
         }
 
         // 2. Initialize Output Lists
@@ -127,5 +138,15 @@ public class Script_Instance : GH_ScriptInstance
         Area = areas;
         Vol = volumes;
         VolRaw = raws;
+    }
+
+    // Sets the name, nickname and hover tooltip of one input/output pin,
+    // guarding the index in case the component has fewer params than expected.
+    private void SetTip(System.Collections.Generic.IList<IGH_Param> ps, int i, string name, string tip)
+    {
+        if (ps == null || i < 0 || i >= ps.Count) return;
+        ps[i].Name = name;
+        ps[i].NickName = name;
+        ps[i].Description = tip;
     }
 }
