@@ -30,6 +30,7 @@ and keeps your list/tree shape) · **list** = the whole list at once ·
 | [IntAngDom](#intangdom) | `InternalAngleDomain.cs` | Finds polyline corners whose angle is within a range |
 | [AdaptDiv](#adaptdiv) | `AdaptiveDivide.cs` | Divides a curve with more points where it bends more |
 | [PolyPlus](#polyplus) | `PolylinePlus.cs` | Polyline through points, with chosen stretches as arcs |
+| [VarChamfer](#varchamfer) | `VariableChamfer.cs` | Chamfers chosen polyline corners, each with its own distance |
 
 ---
 
@@ -272,3 +273,37 @@ an arc from point 2 through point 3 to point 4, then straight 4→5→6.
   and the component shows a warning.
 - Repeated points in a row are skipped.
 - A branch with fewer than 2 points gives an empty item.
+
+---
+
+## VarChamfer
+
+**File:** `VariableChamfer.cs`
+
+**Chamfers** (cuts off) the corners of a polyline — all of them, or only the
+ones you pick — each with its own distance.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Crv` | item | The polyline. Other curves are first converted to a polyline |
+| `Dist` | list | Chamfer distance, measured from the corner along each edge |
+| `Idx` | list | Which corners (vertex numbers, 0 = first; `-1` = last). Empty → every corner |
+
+| Output | Meaning |
+|---|---|
+| `PLine` | The chamfered polyline |
+
+**Which distance goes where:** the 1st chamfered corner uses `Dist[0]`, the
+2nd uses `Dist[1]`, and so on. If `Dist` is shorter, it starts again from
+`Dist[0]`. One value → the same chamfer everywhere.
+
+**Example:** a rectangle, `Idx = [0, 2]`, `Dist = [50, 100]` → corner 0 cut
+by 50, corner 2 cut by 100, corners 1 and 3 untouched.
+
+**Good to know**
+- A chamfer never takes more than half of an edge, so neighbouring chamfers
+  can't overlap (smart clamping). When two meet in the middle of an edge, the
+  shared point is kept once.
+- Open polylines: the first and last points are never chamfered.
+- A distance of 0 (or less) leaves that corner as it is.
+- A curve with fewer than 3 points is passed through unchanged.
