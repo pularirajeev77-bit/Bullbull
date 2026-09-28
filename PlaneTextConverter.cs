@@ -62,14 +62,21 @@ public class Script_Instance : GH_ScriptInstance
         {
           if (string.IsNullOrWhiteSpace(tx)) continue;
 
-          string[] parts = tx.Split('&');
+          string[] parts = tx.Trim().Split('&');
           if (parts.Length != 3) continue; // skip silently
 
+          // trims each segment (handles stray whitespace/newlines from
+          // copy-paste or a CSV round-trip) and checks length before
+          // slicing off the "O{"/"X{"/"Y{" prefix and trailing "}", so a
+          // malformed segment fails the length check instead of relying
+          // on Substring to throw
           Func<string, double[]> parse = (s) =>
           {
-            string clean = s.Substring(2, s.Length - 3);
+            string trimmed = s.Trim();
+            if (trimmed.Length < 3) throw new FormatException("segment too short: " + s);
+            string clean = trimmed.Substring(2, trimmed.Length - 3);
             return clean.Split(',')
-                        .Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture))
+                        .Select(v => double.Parse(v.Trim(), System.Globalization.CultureInfo.InvariantCulture))
                         .ToArray();
           };
 
