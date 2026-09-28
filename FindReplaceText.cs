@@ -36,6 +36,10 @@ List<string> ToStringList(object input)
     return list;
 }
 
+// --- Set Component Metadata (Rhino 8 feature) ---
+Component.Message = "Find&Replace v1.0";
+Component.NickName = "Find&Replace";
+
 // --- Convert all inputs ---
 List<string> textList = ToStringList(T);
 List<string> findList = ToStringList(F);
