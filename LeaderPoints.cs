@@ -1,0 +1,82 @@
+using System;
+using System.Collections.Generic;
+using Rhino;
+using Rhino.Geometry;
+using Grasshopper.Kernel;
+
+public class Script_Instance : GH_ScriptInstance
+{
+    // Professional Rhino 8 Signature
+    // Inputs: plane (Plane), leader_length (double), parameter (double), landing_leg (double)
+    // Outputs: plcrv (object), pts (object)
+    private void RunScript(
+		Plane plane,
+		double leader_length,
+		double parameter,
+		double landing_leg,
+		ref object plcrv,
+		ref object pts)
+
+    {
+        // Set Component Metadata (Rhino 8 feature)
+        Component.Message = "Leader Points";
+        Component.NickName = "Leader Points";
+
+        // Initialize outputs to prevent "unassigned" errors
+        plcrv = null;
+        pts = null;
+
+        try
+        {
+            // 1. Core Geometry Logic
+            double angle = parameter * 2.0 * Math.PI;
+
+            // Compute coordinates on the circle relative to plane origin
+            double x = leader_length * Math.Cos(angle);
+            double y = leader_length * Math.Sin(angle);
+
+            // 2. Determine Vector Direction
+            // Landing leg points the same way the leader leans (left/right).
+            // Based on the actual x coordinate instead of the old
+            // "parameter > 0.25 && parameter < 0.75" test, which broke for
+            // parameters outside 0..1: e.g. 1.4 draws the leader on the left
+            // (same as 0.4) but the old test sent the landing leg right.
+            double direction = (x < 0) ? -1.0 : 1.0;
+
+            // 3. Create the Landing Leg Vector
+            Vector3d vec = plane.XAxis;
+            vec.Unitize();
+            vec *= (landing_leg * direction);
+
+            // 4. Construct the Point Sequence
+            Point3d pt0 = plane.Origin;
+            Point3d pt1 = plane.PointAt(x, y);
+            Point3d pt2 = pt1 + vec;
+
+            // 5. Generate the List Output
+            var pointList = new List<Point3d> { pt0, pt1, pt2 };
+            pts = pointList;
+
+            // 6. Generate the Polyline Output
+            // A zero leader_length or landing_leg makes two points coincide,
+            // and a polyline with a zero-length segment is an invalid curve.
+            // Drop the duplicate points; skip the curve if under 2 remain.
+            double tol = RhinoDoc.ActiveDoc != null
+                ? RhinoDoc.ActiveDoc.ModelAbsoluteTolerance
+                : RhinoMath.ZeroTolerance;
+
+            Polyline pl = new Polyline(pointList);
+            pl.DeleteShortSegments(tol);
+
+            if (pl.Count >= 2)
+                plcrv = new PolylineCurve(pl);
+        }
+        catch (Exception ex)
+        {
+            // Show the error as a red balloon on the component, not only
+            // in the output window where it's easy to miss
+            Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                "Error in LeaderPoints: " + ex.Message);
+        }
+    }
+}

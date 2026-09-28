@@ -21,3 +21,4 @@ C# Script component; the inputs and outputs follow the `RunScript` signature.
 | File | Component | Inputs | Output | What it does |
 |---|---|---|---|---|
 | [PlaneTextConverter.cs](PlaneTextConverter.cs) | Plane><Text | `Pln` (list), `Txt` (list) | `Text`, `Plane` | Converts planes to text and back (`O{..}&X{..}&Y{..}`) |
+| [LeaderPoints.cs](LeaderPoints.cs) | Leader Points | `plane`, `leader_length`, `parameter` (0–1 around the circle), `landing_leg` | `plcrv`, `pts` | Builds a leader line with a horizontal landing leg from a plane |
