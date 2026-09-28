@@ -27,6 +27,7 @@ and keeps your list/tree shape) · **list** = the whole list at once ·
 | [PVL](#pvl) | `PVL.cs` | Lines from a point, a direction and a length |
 | [CrvClass](#crvclass) | `CurveClassifier.cs` | Sorts curves by type: line, polyline, arc, circle, ellipse … |
 | [IntAng](#intang) | `InternalAngleFilter.cs` | Finds the sharp corners of a polyline |
+| [IntAngDom](#intangdom) | `InternalAngleDomain.cs` | Finds polyline corners whose angle is within a range |
 
 ---
 
@@ -168,3 +169,31 @@ fabricate, weld or bend.
 - Radians, not degrees: to use degrees, put a *Radians* component in front.
 - Curves that are not polylines (arcs, NURBS) give empty output.
 - Doubled points are merged first, so a corner drawn with a repeated point is still found.
+
+---
+
+## IntAngDom
+
+**File:** `InternalAngleDomain.cs`
+
+Same as [IntAng](#intang), but finds corners whose inside angle is **within a
+range** (min to max) instead of below one limit. For example, find every
+corner between 80° and 100° to check for right angles.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Crv` | item | A polyline (a list works; you get one branch per curve) |
+| `Dom` | item | Angle range as a domain, **in radians**, min and max included |
+
+| Output | Meaning |
+|---|---|
+| `P` | The corner points whose angle is within `Dom` |
+| `N` | At each of those corners, the direction splitting the angle in half, pointing inside the shape |
+| `t` | Where each corner is on the curve (curve parameter) |
+
+**Example:** an L-shape with `Dom = 4.6 To 4.8` (≈ 264°–275°) → only the concave inside corner (270°).
+
+**Good to know**
+- Everything in IntAng's *Good to know* applies here too (closed = true inside
+  angle 0–360°, open = angle between edges 0–180°, radians).
+- The domain works either way round: `2.0 To 1.0` is the same as `1.0 To 2.0`.
