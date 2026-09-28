@@ -21,16 +21,16 @@ public class Script_Instance : GH_ScriptInstance
     //              (0 / unplugged = 0.01)
     //   MaxSeg   - max number of polyline segments (0 / unplugged = 100, minimum 4)
     // Outputs:
-    //   P  - division points
-    //   PL - polyline through the points
+    //   Pts   - division points
+    //   PLine - polyline through the points
     private void RunScript(
 		object Crv,
 		List<Point3d> ForcePts,
 		List<int> CullIdx,
 		double Tol,
 		int MaxSeg,
-		ref object P,
-		ref object PL)
+		ref object Pts,
+		ref object PLine)
     {
         // --- VISUAL META DATA (GRASSHOPPER CANVAS UI) ---
         Component.Name = "Adaptive Variable Divide";
@@ -188,9 +188,9 @@ public class Script_Instance : GH_ScriptInstance
         }
 
         // 10. Assign Outputs
-        P = finalPts;
-        if (finalPts.Count >= 2) PL = new Polyline(finalPts);
-        else PL = null;
+        Pts = finalPts;
+        if (finalPts.Count >= 2) PLine = new Polyline(finalPts);
+        else PLine = null;
     }
 
     private double GetMaxDeviation(Curve crv, double t0, double t1, out double worstT)

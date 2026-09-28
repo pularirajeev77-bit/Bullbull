@@ -219,8 +219,8 @@ of the curve using as few points as possible.
 
 | Output | Meaning |
 |---|---|
-| `P` | The division points, in order along the curve |
-| `PL` | The polyline through those points |
+| `Pts` | The division points, in order along the curve |
+| `PLine` | The polyline through those points |
 
 **How it works**
 1. Start with 4 equal segments, plus the `ForcePts` locations.
