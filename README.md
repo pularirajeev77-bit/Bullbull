@@ -29,6 +29,7 @@ and keeps your list/tree shape) · **list** = the whole list at once ·
 | [IntAng](#intang) | `InternalAngleFilter.cs` | Finds the sharp corners of a polyline |
 | [IntAngDom](#intangdom) | `InternalAngleDomain.cs` | Finds polyline corners whose angle is within a range |
 | [AdaptDiv](#adaptdiv) | `AdaptiveDivide.cs` | Divides a curve with more points where it bends more |
+| [PolyPlus](#polyplus) | `PolylinePlus.cs` | Polyline through points, with chosen stretches as arcs |
 
 ---
 
@@ -232,3 +233,42 @@ of the curve using as few points as possible.
 - `CullIdx` is applied last, to the finished list of points.
 - The gap is checked at 3 spots per segment, so a very small wiggle between
   two of them can occasionally be missed; lowering `Tol` catches it.
+
+---
+
+## PolyPlus
+
+**File:** `PolylinePlus.cs`
+
+Draws a **polyline through points**, but turns chosen stretches into **arcs**,
+and joins everything into one curve. Optionally closes it.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Pts` | tree | The points, in order. **One curve per branch** |
+| `ArcStartIdx` | list | Point number where each arc starts (0 = first point) |
+| `ArcEndIdx` | list | Point number where each arc ends — paired with `ArcStartIdx` (1st start ↔ 1st end …) |
+| `Close` | item | True → adds a straight segment back to the first point |
+
+| Output | Meaning |
+|---|---|
+| `Crv` | One joined curve per branch, same branch paths as `Pts` |
+
+**Example:** 7 points, `ArcStartIdx = 2`, `ArcEndIdx = 4` → straight 0→1→2,
+an arc from point 2 through point 3 to point 4, then straight 4→5→6.
+
+**How each arc is made**
+- It runs from the start point to the end point and passes through the point
+  halfway between them in the list. Points in between are not all hit exactly,
+  unless they lie on one circle.
+- If the three points are in a straight line, a straight segment is used instead.
+- A range is ignored (drawn straight) if the end is not at least 2 points after
+  the start, or is past the last point.
+
+**Good to know**
+- No arc inputs → a plain polyline.
+- The same arc ranges are used for every branch.
+- If `ArcStartIdx` and `ArcEndIdx` have different counts, no arcs are made
+  and the component shows a warning.
+- Repeated points in a row are skipped.
+- A branch with fewer than 2 points gives an empty item.
