@@ -5,6 +5,7 @@ geometry helpers.
 
 Other branches: [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) (polyline frames) ·
 [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) (curve division, lines from points) ·
+[`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) (weight/area/volume) ·
 [`main`](https://github.com/pularirajeev77-bit/Bullbull/tree/main) (overview)
 
 ## How to use a script
