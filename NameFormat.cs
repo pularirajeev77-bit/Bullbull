@@ -44,9 +44,15 @@ public class Script_Instance : GH_ScriptInstance
     else
       suffixes.Add(S(Sf));
 
+    // guard against an explicitly empty list (as opposed to unconnected/null,
+    // which already falls into the else-branch above) — without this,
+    // prefixes[Math.Min(i, prefixes.Count - 1)] indexes at -1 and throws
+    if (prefixes.Count == 0) prefixes.Add("");
+    if (suffixes.Count == 0) suffixes.Add("");
+
     int start = I(Sn);
-    int count = I(Ct);
-    int padDigits = I(Pn);
+    int count = Math.Max(0, I(Ct));
+    int padDigits = Math.Max(0, I(Pn)); // PadLeft throws on a negative length
 
     // --- Generate names ---
     List<string> result = new List<string>();
