@@ -4,6 +4,7 @@ C# script components for **Rhino 8 Grasshopper**: vectors and frames on polyline
 
 Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEXT) (text tools) ·
 [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) (curve division, lines from points) ·
+[`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) (weight/area/volume) ·
 [`main`](https://github.com/pularirajeev77-bit/Bullbull/tree/main) (overview)
 
 ## How to use a script
