@@ -28,6 +28,7 @@ and keeps your list/tree shape) · **list** = the whole list at once ·
 | [CrvClass](#crvclass) | `CurveClassifier.cs` | Sorts curves by type: line, polyline, arc, circle, ellipse … |
 | [IntAng](#intang) | `InternalAngleFilter.cs` | Finds the sharp corners of a polyline |
 | [IntAngDom](#intangdom) | `InternalAngleDomain.cs` | Finds polyline corners whose angle is within a range |
+| [AdaptDiv](#adaptdiv) | `AdaptiveDivide.cs` | Divides a curve with more points where it bends more |
 
 ---
 
@@ -197,3 +198,37 @@ corner between 80° and 100° to check for right angles.
 - Everything in IntAng's *Good to know* applies here too (closed = true inside
   angle 0–360°, open = angle between edges 0–180°, radians).
 - The domain works either way round: `2.0 To 1.0` is the same as `1.0 To 2.0`.
+
+---
+
+## AdaptDiv
+
+**File:** `AdaptiveDivide.cs`
+
+Divides a curve **adaptively**: more points where it bends a lot, fewer
+where it is nearly straight. The result is a polyline that stays within `Tol`
+of the curve using as few points as possible.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Crv` | item | The curve to divide (NURBS, polycurve, line, arc, circle …) |
+| `ForcePts` | list | Optional points — the division always includes the closest point on the curve to each |
+| `CullIdx` | list | Optional indices of points to remove from the result; negative counts from the end (`-1` = last) |
+| `Tol` | item | Max gap allowed between the curve and the polyline. Unplugged or 0 → 0.01 |
+| `MaxSeg` | item | Max number of polyline segments. Unplugged or 0 → 100; at least 4 |
+
+| Output | Meaning |
+|---|---|
+| `P` | The division points, in order along the curve |
+| `PL` | The polyline through those points |
+
+**How it works**
+1. Start with 4 equal segments, plus the `ForcePts` locations.
+2. Find the segment that is furthest from the curve and split it at that spot.
+3. Repeat until every segment is within `Tol`, or `MaxSeg` is reached.
+
+**Good to know**
+- For a closed curve the polyline is closed too.
+- `CullIdx` is applied last, to the finished list of points.
+- The gap is checked at 3 spots per segment, so a very small wiggle between
+  two of them can occasionally be missed; lowering `Tol` catches it.
