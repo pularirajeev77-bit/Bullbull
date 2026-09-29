@@ -26,6 +26,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [ClosePts](#closepts) | `ClosestPair.cs` | Finds the two points that are closest together |
 | [SideSort](#sidesort) | `SideSorter.cs` | Sorts points into left and right of a curve |
 | [PtOnCrv](#ptoncrv) | `PointOnCurve.cs` | Tests which points lie on curves, per branch |
+| [RadSort](#radsort) | `RadialSort.cs` | Sorts points counter-clockwise around a plane |
 
 ---
 
@@ -159,3 +160,28 @@ For each **branch of curves**, tests which of the points lie **on** a curve
 - A point is "on" if it lies within `Tol` of any curve in that branch.
 - `OnIdx` / `OffIdx` are positions in the input `Pts` list, for pulling
   matching data from other lists.
+
+---
+
+## RadSort
+
+**File:** `RadialSort.cs`
+
+Sorts a list of points **counter-clockwise by angle** around a plane - useful
+for ordering scattered points into a clean loop or fan.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Pts` | list | The points to sort |
+| `Pln` | item | Plane to sort around: origin = centre, X axis = angle 0, normal = CCW direction. Invalid = World XY |
+
+| Output | Meaning |
+|---|---|
+| `SortedPts` | The points ordered counter-clockwise, starting from the plane's X axis |
+
+**Good to know**
+- Angle is measured in the plane, so points are flattened onto it first - the
+  height above/below the plane does not affect the order.
+- Sorting starts at the plane's X axis and goes counter-clockwise (as seen
+  looking down the plane's normal). Rotate the plane to change the start.
+- A point exactly at the plane origin has no direction; it just sorts to angle 0.
