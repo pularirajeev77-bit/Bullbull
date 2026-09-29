@@ -26,6 +26,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [PSize](#psize) | `PartSize.cs` | Length, width and height of a box |
 | [CrtFold](#crtfold) | `CreateFolder.cs` | Creates a folder on disk when toggled on |
 | [DelFiles](#delfiles) | `DeleteFiles.cs` | Deletes files of one extension from a folder |
+| [ModFold](#modfold) | `RhinoModelFolder.cs` | Folder of the saved Rhino model and Grasshopper file path |
 
 ---
 
@@ -182,3 +183,29 @@ wire it up first and check the folder before triggering.
 - Only the named folder is touched, not its sub-folders.
 - Files in use are skipped and listed with their error in `Deleted`.
 - With `Button = False` nothing is deleted.
+
+---
+
+## ModFold
+
+**File:** `RhinoModelFolder.cs`
+
+Gets the **folder of the saved Rhino model** and the **full path of the saved
+Grasshopper file** - handy for saving exports next to the current file.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Get` | item | Set True to read the paths. False = idle |
+
+| Output | Meaning |
+|---|---|
+| `Rh_path` | Folder that contains the saved `.3dm` file |
+| `Gh_path` | Full path of the saved Grasshopper file (`.gh` / `.ghx`) |
+
+**Good to know**
+- Both work only **after the files are saved**. If the Rhino model or the
+  Grasshopper file has never been saved, that output says so and the component
+  shows a warning.
+- `Rh_path` is the folder; `Gh_path` is the full file path (including the file name).
+- `Gh_path` reads this component's own document, so it is correct even if
+  another Grasshopper window is in focus.
