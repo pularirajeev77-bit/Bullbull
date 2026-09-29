@@ -11,7 +11,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEXT) | Name-Format, Find&Replace, Search Text, Multi > Single-Line-Text, Single > Multi-Line-Text, GetNumbers, GetText, Plane><Text, Leader Points |
 | [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) | Bisect Frame |
 | [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) | CenterDiv, PVL, CrvClass, IntAng, IntAngDom, AdaptDiv, PolyPlus, VarChamfer |
-| [`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) | Calci, RemThruHole |
+| [`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) | Calci, RemThruHole, PSize |
 
 ## All components
 
@@ -37,6 +37,7 @@ topic into branches — switch branch to see the code and full instructions.
 | VarChamfer | `curves` | Chamfers chosen polyline corners, each with its own distance |
 | Calci | `utility` | Weight, area and volume of solids (Breps) |
 | RemThruHole | `utility` | Removes through holes from Brep faces by size or index |
+| PSize | `utility` | Length, width and height of a box |
 
 ## How to use a script
 
