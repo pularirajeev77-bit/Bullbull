@@ -23,6 +23,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 |---|---|---|
 | [Calci](#calci) | `BullbullCalculation.cs` | Weight, area and volume of solids (Breps) |
 | [RemThruHole](#remthruhole) | `RemoveThroughHoles.cs` | Removes through holes from Brep faces by size or index |
+| [PSize](#psize) | `PartSize.cs` | Length, width and height of a box |
 
 ---
 
@@ -95,3 +96,28 @@ perimeter length or index.
   diameter or length.
 - If no criteria are given, the Breps pass through unchanged with a warning.
 - Empty or null input gives an empty result with a warning.
+
+---
+
+## PSize
+
+**File:** `PartSize.cs`
+
+Measures the **length, width and height** of each box, in the model's units.
+Handy for part lists and cut sheets.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Box` | item | The box(es) to measure (item, list or tree) |
+
+| Output | Meaning |
+|---|---|
+| `Length` | The larger of the two base edges |
+| `Width` | The smaller of the two base edges |
+| `Height` | The box height (its Z size in the box's own frame) |
+
+**Good to know**
+- Length is always the longer base edge and Width the shorter, so the two never swap around between parts.
+- All three values are rounded to 2 decimals.
+- An invalid box gives `NaN` for that item, keeping the outputs lined up with the input.
+- Height follows the box's own orientation, not world Z, so a tilted box still measures correctly.
