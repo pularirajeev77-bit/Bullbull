@@ -12,7 +12,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) | Bisect Frame |
 | [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) | CenterDiv, PVL, CrvClass, IntAng, IntAngDom, AdaptDiv, PolyPlus, VarChamfer |
 | [`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) | Calci, RemThruHole, PSize, CrtFold, DelFiles, ModFold, TimerCnt |
-| [`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) | CullDupPt, FarPts |
+| [`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) | CullDupPt, FarPts, ClosePts |
 
 ## All components
 
@@ -45,6 +45,7 @@ topic into branches — switch branch to see the code and full instructions.
 | TimerCnt | `utility` | Counts up over time; loops, pauses and resets |
 | CullDupPt | `point` | Removes duplicate points within a tolerance |
 | FarPts | `point` | Finds the two points that are farthest apart |
+| ClosePts | `point` | Finds the two points that are closest together |
 
 ## How to use a script
 
