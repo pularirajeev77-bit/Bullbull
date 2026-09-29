@@ -24,6 +24,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [Calci](#calci) | `BullbullCalculation.cs` | Weight, area and volume of solids (Breps) |
 | [RemThruHole](#remthruhole) | `RemoveThroughHoles.cs` | Removes through holes from Brep faces by size or index |
 | [PSize](#psize) | `PartSize.cs` | Length, width and height of a box |
+| [CrtFold](#crtfold) | `CreateFolder.cs` | Creates a folder on disk when toggled on |
 
 ---
 
@@ -121,3 +122,32 @@ Handy for part lists and cut sheets.
 - All three values are rounded to 2 decimals.
 - An invalid box gives `NaN` for that item, keeping the outputs lined up with the input.
 - Height follows the box's own orientation, not world Z, so a tilted box still measures correctly.
+
+---
+
+## CrtFold
+
+**File:** `CreateFolder.cs`
+
+Creates a **folder on disk** at `Path\Name`. It only writes when `Create` is
+True, so you can wire it up and preview the path safely first.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Path` | item | Base folder that will contain the new one (e.g. `C:\Jobs`) |
+| `Name` | item | Name of the folder to create. May include sub-folders (`a\b` makes both) |
+| `Create` | item | True = create it now. False = just show the path, write nothing |
+
+| Output | Meaning |
+|---|---|
+| `FolderPath` | The full path (`Path` + `Name`), whether or not it was created |
+| `Msg` | Status: created, already exists, waiting for Create, or an error |
+
+**Good to know**
+- With `Create = False` nothing is written - `FolderPath` still shows where it
+  would go, so you can check before committing.
+- Missing parent folders are created automatically.
+- A leading slash on `Name` is stripped, so the folder always lands inside
+  `Path` (not at the drive root).
+- If the folder already exists, it is left as-is and `Msg` says so.
+- Errors (bad path, no permission) appear in `Msg` and as a warning on the component.
