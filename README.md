@@ -24,6 +24,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [CullDupPt](#cullduppt) | `CullDuplicatePoints.cs` | Removes duplicate points within a tolerance |
 | [FarPts](#farpts) | `FarthestPair.cs` | Finds the two points that are farthest apart |
 | [ClosePts](#closepts) | `ClosestPair.cs` | Finds the two points that are closest together |
+| [SideSort](#sidesort) | `SideSorter.cs` | Sorts points into left and right of a curve |
 
 ---
 
@@ -99,3 +100,33 @@ between them - useful for spotting the tightest spacing or near-collisions.
 - Fewer than 2 points returns unset points and a distance of 0.
 - It compares every pair, so it is instant for normal lists but slows down on
   very large sets (a few thousand points and up).
+
+---
+
+## SideSort
+
+**File:** `SideSorter.cs`
+
+Splits a set of points into those on the **left** and **right** of a curve.
+Each point is judged against the nearest spot on the curve, using a plane's
+normal to define which way is up.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Points` | list | The points to sort |
+| `Crv` | item | The dividing curve. Left/Right follow the curve's direction |
+| `Pln` | item | Plane whose normal defines "up" for the test. Invalid = World XY |
+
+| Output | Meaning |
+|---|---|
+| `LeftPts` | Points on the left |
+| `RightPts` | Points on the right (points exactly on the curve go here) |
+| `LeftIdx` | Original indices of the left points |
+| `RightIdx` | Original indices of the right points |
+
+**Good to know**
+- "Left" and "Right" depend on the **curve's direction** - flip the curve to
+  swap the two sides.
+- The `Pln` normal sets which way is up; with World XY, left/right are as seen
+  from above. Points sitting exactly on the curve go to `RightPts`.
+- Use `LeftIdx` / `RightIdx` to pull matching data from other lists.
