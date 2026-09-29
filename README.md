@@ -22,6 +22,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | Component | File | What it does |
 |---|---|---|
 | [CullDupPt](#cullduppt) | `CullDuplicatePoints.cs` | Removes duplicate points within a tolerance |
+| [FarPts](#farpts) | `FarthestPair.cs` | Finds the two points that are farthest apart |
 
 ---
 
@@ -49,3 +50,27 @@ Removes **duplicate points** from a list. Two points closer together than
 - The first point of each duplicate group is the one kept.
 - Invalid points are dropped.
 - No input gives an empty list.
+
+---
+
+## FarPts
+
+**File:** `FarthestPair.cs`
+
+Finds the **two points that are farthest apart** in a list, and the distance
+between them - useful for the overall span or bounding size of a point set.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Points` | list | The points to search (need at least 2) |
+
+| Output | Meaning |
+|---|---|
+| `PtA` | One end of the farthest pair |
+| `PtB` | The other end |
+| `MaxDist` | Distance between `PtA` and `PtB` |
+
+**Good to know**
+- Fewer than 2 points returns unset points and a distance of 0.
+- It compares every pair, so it is instant for normal lists but slows down on
+  very large sets (a few thousand points and up).
