@@ -14,6 +14,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) | Calci, RemThruHole, PSize, CrtFold, DelFiles, ModFold, TimerCnt |
 | [`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) | CullDupPt, FarPts, ClosePts, SideSort, PtOnCrv, RadSort, WeightSort |
 | [`surface`](https://github.com/pularirajeev77-bit/Bullbull/tree/surface) | EdgeAn |
+| [`Plane`](https://github.com/pularirajeev77-bit/Bullbull/tree/Plane) | CamPlane |
 
 ## All components
 
@@ -52,6 +53,7 @@ topic into branches — switch branch to see the code and full instructions.
 | RadSort | `point` | Sorts points counter-clockwise around a plane |
 | WeightSort | `point` | Sorts points by a weighted key of X, Y, Z |
 | EdgeAn | `surface` | Sorts a Brep's edges: outer, inner, naked, interior, non-manifold |
+| CamPlane | `Plane` | Planes at points that face the camera |
 
 ## How to use a script
 
