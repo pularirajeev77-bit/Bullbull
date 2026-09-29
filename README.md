@@ -25,6 +25,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [FarPts](#farpts) | `FarthestPair.cs` | Finds the two points that are farthest apart |
 | [ClosePts](#closepts) | `ClosestPair.cs` | Finds the two points that are closest together |
 | [SideSort](#sidesort) | `SideSorter.cs` | Sorts points into left and right of a curve |
+| [PtOnCrv](#ptoncrv) | `PointOnCurve.cs` | Tests which points lie on curves, per branch |
 
 ---
 
@@ -130,3 +131,31 @@ normal to define which way is up.
 - The `Pln` normal sets which way is up; with World XY, left/right are as seen
   from above. Points sitting exactly on the curve go to `RightPts`.
 - Use `LeftIdx` / `RightIdx` to pull matching data from other lists.
+
+---
+
+## PtOnCrv
+
+**File:** `PointOnCurve.cs`
+
+For each **branch of curves**, tests which of the points lie **on** a curve
+(within a tolerance). Handy for filtering points that sit on given edges.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Crv` | tree | Curves to test against. Each branch is tested on its own |
+| `Pts` | list | The points to test (the same list is used for every branch) |
+| `Tol` | item | A point counts as "on" if it is within this distance. 0 or less uses the model tolerance |
+
+| Output | Meaning |
+|---|---|
+| `OnCrv` | Per branch: True/False for each point - is it on any curve in that branch? |
+| `OnIdx` | Per branch: indices of the points that ARE on a curve |
+| `OffIdx` | Per branch: indices of the points that are NOT on any curve |
+
+**Good to know**
+- The same point list is compared against every curve branch, so you get one
+  set of results per branch (matching the curve tree's paths).
+- A point is "on" if it lies within `Tol` of any curve in that branch.
+- `OnIdx` / `OffIdx` are positions in the input `Pts` list, for pulling
+  matching data from other lists.
