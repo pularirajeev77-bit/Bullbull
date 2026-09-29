@@ -26,6 +26,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | Component | File | What it does |
 |---|---|---|
 | [Zebra](#zebra) | `ZebraAnalysis.cs` | Zebra-stripe surface analysis in the viewport |
+| [GoldEmap](#goldemap) | `BrushedGoldEmap.cs` | Brushed-gold reflection map on geometry |
 
 ---
 
@@ -54,3 +55,29 @@ Grasshopper outputs, and it deliberately draws no wires or mesh edges.
 - Each component writes its own texture, so several Zebra components can run at
   once without clashing (an earlier version shared one texture file).
 - Turn stripes horizontal or vertical to check curvature in different directions.
+
+---
+
+## GoldEmap
+
+**File:** `BrushedGoldEmap.cs`
+
+Shades geometry with Rhino's native **brushed-gold environment map**, so
+reflections streak across the surface and reveal curvature and continuity - a
+quick "is this smooth?" check, and it just looks good for presentation. It is
+**display only**: no outputs, and it draws no wires or edges.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Geometry` | list | Breps or Meshes to shade |
+
+*No outputs - the result is drawn straight into the viewport.*
+
+**Good to know**
+- Uses Rhino 8's own `brushed_gold.jpg`. It looks in the English install folder
+  first, then searches the other language folders, so non-English Rhino works
+  too. If the file isn't found it warns and does nothing.
+- Breps are meshed at high quality; only Breps and Meshes are used (others are
+  skipped with a warning).
+- Smooth, continuous reflection streaks mean smooth surfaces; broken or kinked
+  streaks show creases or tangency breaks.
