@@ -11,7 +11,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEXT) | Name-Format, Find&Replace, Search Text, Multi > Single-Line-Text, Single > Multi-Line-Text, GetNumbers, GetText, Plane><Text, Leader Points |
 | [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) | Bisect Frame |
 | [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) | CenterDiv, PVL, CrvClass, IntAng, IntAngDom, AdaptDiv, PolyPlus, VarChamfer |
-| [`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) | Calci, RemThruHole, PSize, CrtFold, DelFiles |
+| [`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) | Calci, RemThruHole, PSize, CrtFold, DelFiles, ModFold |
 
 ## All components
 
@@ -40,6 +40,7 @@ topic into branches — switch branch to see the code and full instructions.
 | PSize | `utility` | Length, width and height of a box |
 | CrtFold | `utility` | Creates a folder on disk when toggled on |
 | DelFiles | `utility` | Deletes files of one extension from a folder |
+| ModFold | `utility` | Folder of the saved Rhino model and Grasshopper file path |
 
 ## How to use a script
 
