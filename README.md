@@ -15,6 +15,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) | CullDupPt, FarPts, ClosePts, SideSort, PtOnCrv, RadSort, WeightSort |
 | [`surface`](https://github.com/pularirajeev77-bit/Bullbull/tree/surface) | EdgeAn |
 | [`Plane`](https://github.com/pularirajeev77-bit/Bullbull/tree/Plane) | CamPlane |
+| [`Layers`](https://github.com/pularirajeev77-bit/Bullbull/tree/Layers) | CurrLyr |
 
 ## All components
 
@@ -54,6 +55,7 @@ topic into branches — switch branch to see the code and full instructions.
 | WeightSort | `point` | Sorts points by a weighted key of X, Y, Z |
 | EdgeAn | `surface` | Sorts a Brep's edges: outer, inner, naked, interior, non-manifold |
 | CamPlane | `Plane` | Planes at points that face the camera |
+| CurrLyr | `Layers` | Sets the current layer, creating it if needed |
 
 ## How to use a script
 
