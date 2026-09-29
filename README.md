@@ -27,6 +27,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [SideSort](#sidesort) | `SideSorter.cs` | Sorts points into left and right of a curve |
 | [PtOnCrv](#ptoncrv) | `PointOnCurve.cs` | Tests which points lie on curves, per branch |
 | [RadSort](#radsort) | `RadialSort.cs` | Sorts points counter-clockwise around a plane |
+| [WeightSort](#weightsort) | `WeightedSort.cs` | Sorts points by a weighted key of X, Y, Z |
 
 ---
 
@@ -185,3 +186,35 @@ for ordering scattered points into a clean loop or fan.
 - Sorting starts at the plane's X axis and goes counter-clockwise (as seen
   looking down the plane's normal). Rotate the plane to change the start.
 - A point exactly at the plane origin has no direction; it just sorts to angle 0.
+
+---
+
+## WeightSort
+
+**File:** `WeightedSort.cs`
+
+Sorts points by a single **weighted key** built from their coordinates, so you
+can bias the order toward one axis.
+
+Key = `X_Mult * X^2 + Y_Mult * Y^2 + Z_Mult * Z^2`
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Points` | list | The points to sort |
+| `X_Mult` | item | Weight on X (used as `X_Mult * X^2`) |
+| `Y_Mult` | item | Weight on Y (used as `Y_Mult * Y^2`) |
+| `Z_Mult` | item | Weight on Z (used as `Z_Mult * Z^2`) |
+
+| Output | Meaning |
+|---|---|
+| `SortedPts` | The points ordered by key, smallest first |
+| `Indices` | Original index of each sorted point |
+| `Keys` | The key value of each point, in sorted order |
+
+**Good to know**
+- Each term is **squared**, so a coordinate's sign is lost: `x = -5` and
+  `x = 5` weigh the same. This orders points by weighted distance from the
+  origin, not along a signed direction.
+- For a plain signed sort along a direction, sort by a dot product with that
+  direction instead.
+- `Indices` lets you reorder other lists the same way.
