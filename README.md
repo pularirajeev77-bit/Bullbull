@@ -27,6 +27,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [CurrLyr](#currlyr) | `CurrentLayer.cs` | Sets the current layer, creating it if needed |
 | [LBS](#lbs) | `LayerBranchStyle.cs` | Creates and styles layer trees (colour + linetype) |
 | [CHL](#chl) | `ChangeLayer.cs` | Moves objects from one layer to another |
+| [DLM](#dlm) | `DetailLayerManager.cs` | Shows/hides layers inside layout details |
 
 ---
 
@@ -120,3 +121,34 @@ model by layer in one step.
 - Target layers use `Parent::Child` for nesting and are created if missing.
 - Changes the Rhino document (not Grasshopper); the view refreshes
   automatically, and a missing base layer is noted rather than fatal.
+
+---
+
+## DLM
+
+**File:** `DetailLayerManager.cs`
+
+Controls **which layers are visible inside layout detail views** - isolate,
+hide, or show layers per detail, without touching their overall visibility.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Run` | item | True to apply, using `Mode`. Cannot be True together with `Reset` |
+| `Reset` | item | True to SHOW the listed layers (undo an isolate/hide) |
+| `Mode` | item | 0 = Show Only (show listed, hide all others); any other value = Hide listed |
+| `Layouts` | list | Layout page names to act on |
+| `Details` | list | Detail view names within those layouts |
+| `LayerNames` | list | Layer names to show/hide (matched by name, not full path) |
+
+| Output | Meaning |
+|---|---|
+| `status` | What happened, with a count of changes, or an error |
+
+**Good to know**
+- This sets **per-detail** visibility only - it does not change whether a layer
+  is on/off globally.
+- **Show Only (`Mode 0`)** hides every other layer in that detail; use `Reset`
+  (or Show Only with the full layer list) to bring them back.
+- Layers are matched by **name**, so two sub-layers that share a leaf name are
+  both affected.
+- Missing layouts or details are noted and skipped, not fatal.
