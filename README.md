@@ -22,7 +22,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | Component | File | What it does |
 |---|---|---|
 | [Calci](#calci) | `BullbullCalculation.cs` | Weight, area and volume of solids (Breps) |
-| [RemHole](#remhole) | `RemoveHoles.cs` | Removes holes from Brep faces by size or index |
+| [RemThruHole](#remthruhole) | `RemoveThroughHoles.cs` | Removes through holes from Brep faces by size or index |
 
 ---
 
@@ -59,30 +59,36 @@ metric units. Useful for quick material take-offs and mass estimates.
 
 ---
 
-## RemHole
+---
 
-**File:** `RemoveHoles.cs`
+## RemThruHole
 
-Removes **holes** (inner loops) from Brep faces. Pick which holes to remove:
-all of them, or only ones of a certain diameter, perimeter length or index.
+**File:** `RemoveThroughHoles.cs`
+
+Removes **through holes** (holes bored all the way through) from Brep faces.
+Pick which holes to remove: all of them, or only ones of a certain diameter,
+perimeter length or index.
 
 | Input | Access | Meaning |
 |---|---|---|
 | `Brep` | tree | The Breps to clean; the tree structure is kept |
-| `AllHoles` | item | True to remove every hole (ignores the three inputs below) |
-| `TargetDiameters` | list | Remove holes whose diameter matches one of these (within `Tolerance`). Diameter = loop length / pi |
-| `TargetLengths` | list | Remove holes whose perimeter length matches one of these (within `Tolerance`) |
-| `HoleIndices` | list | Remove holes by number (0 = first; `-1` = last), per Brep |
+| `AllHoles` | item | True to remove every through hole (ignores the three inputs below) |
+| `TargetDiameters` | list | Remove through holes whose diameter matches one of these (within `Tolerance`). Diameter = loop length / pi |
+| `TargetLengths` | list | Remove through holes whose perimeter length matches one of these (within `Tolerance`) |
+| `HoleIndices` | list | Remove through holes by number (0 = first; `-1` = last), per Brep |
 | `Tolerance` | item | Match/geometry tolerance. 0 or less uses the model tolerance |
 
 | Output | Meaning |
 |---|---|
-| `Result` | The Breps with the matching holes removed, same tree structure as the input |
+| `Result` | The Breps with the matching through holes removed, same tree structure as the input |
 
-**Example:** to remove every 20 mm hole, feed `TargetDiameters = 20` (with the
-file in mm). To remove all holes, set `AllHoles = true`.
+**Example:** to remove every 20 mm through hole, feed `TargetDiameters = 20`
+(with the file in mm). To remove all through holes, set `AllHoles = true`.
 
 **Good to know**
+- **Through holes only.** Blind holes and pockets (that do not pass all the
+  way through) are detected and matched, but cannot be filled, so those Breps
+  come back unchanged with no error.
 - Diameter is worked out as perimeter / pi, so it is exact for round holes and
   only approximate for other shapes - match those by `TargetLengths` instead.
 - The criteria add up: a hole is removed if it matches **any** of index,

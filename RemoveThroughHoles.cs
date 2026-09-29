@@ -2,11 +2,13 @@
   Author: Rajeev Pulari + ChatGPT
   Rhino 8 | Grasshopper C#
   Version: 2026.04.05
-  Component: RemoveHoles
+  Component: RemoveThroughHoles
   Description:
-    Removes inner loops (holes) from Brep faces, chosen by All / Diameter /
-    Length / Index. Uses warning messages for empty inputs to keep the
-    canvas clean. Preserves the input tree structure.
+    Removes THROUGH holes (inner loops that pass fully through) from Brep
+    faces, chosen by All / Diameter / Length / Index. Blind holes and
+    pockets are detected but cannot be filled, so those Breps pass through
+    unchanged. Uses warning messages for empty inputs to keep the canvas
+    clean. Preserves the input tree structure.
 */
 
 using System;
@@ -30,28 +32,28 @@ public class Script_Instance : GH_ScriptInstance
 		ref object Result)
     {
         // 1. Set Metadata + pin tooltips (once)
-        if (this.Component != null && this.Component.Message != "Remove Holes v2.0")
+        if (this.Component != null && this.Component.Message != "Remove Through Holes v2.0")
         {
-            this.Component.Message = "Remove Holes v2.0";
-            this.Component.NickName = "RemHole";
-            this.Component.Name = "Remove Holes";
+            this.Component.Message = "Remove Through Holes v2.0";
+            this.Component.NickName = "RemThruHole";
+            this.Component.Name = "Remove Through Holes";
             this.Component.Description =
-                "Removes inner loops (holes) from Brep faces, chosen by All / Diameter / Length / Index.";
+                "Removes THROUGH holes from Brep faces, chosen by All / Diameter / Length / Index. Blind holes/pockets are left unchanged.";
 
             SetTip(this.Component.Params.Input, 0, "Brep",
-                "Breps to remove holes from (tree; structure is preserved).");
+                "Breps to remove through holes from (tree; structure is preserved).");
             SetTip(this.Component.Params.Input, 1, "AllHoles",
-                "True = remove every hole; ignores the Dia/Len/Idx inputs.");
+                "True = remove every through hole; ignores the Dia/Len/Idx inputs.");
             SetTip(this.Component.Params.Input, 2, "TargetDiameters",
-                "Remove holes whose diameter matches one of these (within Tolerance). Diameter = loop length / Pi.");
+                "Remove through holes whose diameter matches one of these (within Tolerance). Diameter = loop length / Pi.");
             SetTip(this.Component.Params.Input, 3, "TargetLengths",
-                "Remove holes whose loop length (perimeter) matches one of these (within Tolerance).");
+                "Remove through holes whose loop length (perimeter) matches one of these (within Tolerance).");
             SetTip(this.Component.Params.Input, 4, "HoleIndices",
-                "Remove holes by index (0-based, per Brep, in the order the holes are found).");
+                "Remove through holes by index (0-based, per Brep, in the order the holes are found).");
             SetTip(this.Component.Params.Input, 5, "Tolerance",
                 "Match/geometry tolerance. 0 or less uses the model tolerance.");
             SetTip(this.Component.Params.Output, 0, "Result",
-                "The Breps with matching holes removed (same tree structure as input).");
+                "The Breps with matching through holes removed. Blind holes/pockets are left unchanged (same tree structure as input).");
         }
 
         // 2. Initialize Output
