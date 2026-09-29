@@ -94,21 +94,20 @@ structure and type - as text/values you can panel out or use downstream.
 
 | Input | Access | Meaning |
 |---|---|---|
-| `C` | item | The curve to inspect |
+| `Curve` | item | The curve to inspect |
 
 | Output | Meaning |
 |---|---|
-| `L` | Length of the curve |
-| `D` | Parameter domain (start..end) |
-| `P` | Key points: start, middle, end |
-| `K` | NURBS structure: degree and span count |
-| `I` | Flags: closed, periodic, planar |
-| `T` | Object type and .NET class name |
+| `Length` | Length of the curve |
+| `Domain` | Parameter domain (start..end) |
+| `KeyPoints` | Key points: start, middle, end |
+| `Structure` | NURBS structure: degree and span count |
+| `Info` | Flags: closed, periodic, planar |
+| `Type` | Object type and .NET class name |
 
 **Good to know**
 - Planarity is checked at the model tolerance (with a fallback when no document
   is open, so it no longer crashes headless).
-- The pins show friendly names (Length, Domain, Points, ...) on the canvas.
 - This is a data/reporting tool rather than a viewport display; it lives here on
   the `display` branch by request, but fits the `curves` branch topically - say
   the word to move it.

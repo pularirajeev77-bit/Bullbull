@@ -18,14 +18,15 @@ public class Script_Instance : GH_ScriptInstance
     Description: Extracting Curve Geometric Properties
     */
 
+    // Full-word parameter names (were single letters C / L / D / P / K / I / T)
     private void RunScript(
-		Curve C,
-		ref object L,
-		ref object D,
-		ref object P,
-		ref object K,
-		ref object I,
-		ref object T)
+		Curve Curve,
+		ref object Length,
+		ref object Domain,
+		ref object KeyPoints,
+		ref object Structure,
+		ref object Info,
+		ref object Type)
     {
         // Metadata + pin tooltips (once)
         if (this.Component != null && this.Component.Name != "Curve Details")
@@ -38,32 +39,32 @@ public class Script_Instance : GH_ScriptInstance
             SetTip(this.Component.Params.Input, 0, "Curve", "The curve to inspect.");
             SetTip(this.Component.Params.Output, 0, "Length", "Length of the curve.");
             SetTip(this.Component.Params.Output, 1, "Domain", "Parameter domain (start..end).");
-            SetTip(this.Component.Params.Output, 2, "Points", "Key points: start, middle, end.");
+            SetTip(this.Component.Params.Output, 2, "KeyPoints", "Key points: start, middle, end.");
             SetTip(this.Component.Params.Output, 3, "Structure", "NURBS structure: degree and span count.");
             SetTip(this.Component.Params.Output, 4, "Info", "Flags: closed, periodic, planar.");
             SetTip(this.Component.Params.Output, 5, "Type", "Object type and .NET class name.");
         }
 
         // 1. Input validation
-        if (C == null)
+        if (Curve == null)
         {
-            this.Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Input curve 'C' is null.");
+            this.Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Input 'Curve' is null.");
             return;
         }
 
         // 2. Length & Domain
-        L = C.GetLength();
-        D = C.Domain;
+        Length = Curve.GetLength();
+        Domain = Curve.Domain;
 
         // 3. Key points (start, mid-parameter, end)
         List<Point3d> keyPoints = new List<Point3d>();
-        keyPoints.Add(C.PointAtStart);
-        keyPoints.Add(C.PointAt(C.Domain.Mid));
-        keyPoints.Add(C.PointAtEnd);
-        P = keyPoints;
+        keyPoints.Add(Curve.PointAtStart);
+        keyPoints.Add(Curve.PointAt(Curve.Domain.Mid));
+        keyPoints.Add(Curve.PointAtEnd);
+        KeyPoints = keyPoints;
 
         // 4. Mathematical structure
-        K = "Degree: " + C.Degree + " | Spans: " + C.SpanCount;
+        Structure = "Degree: " + Curve.Degree + " | Spans: " + Curve.SpanCount;
 
         // 5. Geometric intelligence
         // Use the model tolerance, but fall back when no document is open
@@ -72,11 +73,11 @@ public class Script_Instance : GH_ScriptInstance
         double tol = (RhinoDoc.ActiveDoc != null)
             ? RhinoDoc.ActiveDoc.ModelAbsoluteTolerance
             : RhinoMath.ZeroTolerance;
-        bool isPlanar = C.IsPlanar(tol);
-        I = "Closed: " + C.IsClosed + " | Periodic: " + C.IsPeriodic + " | Planar: " + isPlanar;
+        bool isPlanar = Curve.IsPlanar(tol);
+        Info = "Closed: " + Curve.IsClosed + " | Periodic: " + Curve.IsPeriodic + " | Planar: " + isPlanar;
 
         // 6. Detailed type info (LineCurve, PolylineCurve, NurbsCurve, ...)
-        T = C.ObjectType + " (" + C.GetType().Name + ")";
+        Type = Curve.ObjectType + " (" + Curve.GetType().Name + ")";
     }
 
     private void SetTip(System.Collections.Generic.IList<IGH_Param> ps, int i, string name, string tip)
