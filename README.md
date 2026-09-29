@@ -27,6 +27,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 |---|---|---|
 | [Zebra](#zebra) | `ZebraAnalysis.cs` | Zebra-stripe surface analysis in the viewport |
 | [GoldEmap](#goldemap) | `BrushedGoldEmap.cs` | Brushed-gold reflection map on geometry |
+| [CrvProp](#crvprop) | `CurveDetails.cs` | Reports a curve's length, domain, type and more |
 
 ---
 
@@ -81,3 +82,33 @@ quick "is this smooth?" check, and it just looks good for presentation. It is
   skipped with a warning).
 - Smooth, continuous reflection streaks mean smooth surfaces; broken or kinked
   streaks show creases or tangency breaks.
+
+---
+
+## CrvProp
+
+**File:** `CurveDetails.cs`
+
+Reads out the **properties of a curve** - length, domain, key points, NURBS
+structure and type - as text/values you can panel out or use downstream.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `C` | item | The curve to inspect |
+
+| Output | Meaning |
+|---|---|
+| `L` | Length of the curve |
+| `D` | Parameter domain (start..end) |
+| `P` | Key points: start, middle, end |
+| `K` | NURBS structure: degree and span count |
+| `I` | Flags: closed, periodic, planar |
+| `T` | Object type and .NET class name |
+
+**Good to know**
+- Planarity is checked at the model tolerance (with a fallback when no document
+  is open, so it no longer crashes headless).
+- The pins show friendly names (Length, Domain, Points, ...) on the canvas.
+- This is a data/reporting tool rather than a viewport display; it lives here on
+  the `display` branch by request, but fits the `curves` branch topically - say
+  the word to move it.
