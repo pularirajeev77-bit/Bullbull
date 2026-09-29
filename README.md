@@ -23,6 +23,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 |---|---|---|
 | [CullDupPt](#cullduppt) | `CullDuplicatePoints.cs` | Removes duplicate points within a tolerance |
 | [FarPts](#farpts) | `FarthestPair.cs` | Finds the two points that are farthest apart |
+| [ClosePts](#closepts) | `ClosestPair.cs` | Finds the two points that are closest together |
 
 ---
 
@@ -69,6 +70,30 @@ between them - useful for the overall span or bounding size of a point set.
 | `PtA` | One end of the farthest pair |
 | `PtB` | The other end |
 | `MaxDist` | Distance between `PtA` and `PtB` |
+
+**Good to know**
+- Fewer than 2 points returns unset points and a distance of 0.
+- It compares every pair, so it is instant for normal lists but slows down on
+  very large sets (a few thousand points and up).
+
+---
+
+## ClosePts
+
+**File:** `ClosestPair.cs`
+
+Finds the **two points that are closest together** in a list, and the distance
+between them - useful for spotting the tightest spacing or near-collisions.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Points` | list | The points to search (need at least 2) |
+
+| Output | Meaning |
+|---|---|
+| `PtA` | One of the two closest points |
+| `PtB` | The other |
+| `MinDist` | Distance between `PtA` and `PtB` |
 
 **Good to know**
 - Fewer than 2 points returns unset points and a distance of 0.
