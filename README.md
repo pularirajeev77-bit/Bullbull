@@ -12,7 +12,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) | Bisect Frame |
 | [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) | CenterDiv, PVL, CrvClass, IntAng, IntAngDom, AdaptDiv, PolyPlus, VarChamfer |
 | [`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) | Calci, RemThruHole, PSize, CrtFold, DelFiles, ModFold, TimerCnt |
-| [`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) | CullDupPt, FarPts, ClosePts, SideSort, PtOnCrv |
+| [`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) | CullDupPt, FarPts, ClosePts, SideSort, PtOnCrv, RadSort, WeightSort |
 
 ## All components
 
@@ -48,6 +48,8 @@ topic into branches — switch branch to see the code and full instructions.
 | ClosePts | `point` | Finds the two points that are closest together |
 | SideSort | `point` | Sorts points into left and right of a curve |
 | PtOnCrv | `point` | Tests which points lie on curves, per branch |
+| RadSort | `point` | Sorts points counter-clockwise around a plane |
+| WeightSort | `point` | Sorts points by a weighted key of X, Y, Z |
 
 ## How to use a script
 
