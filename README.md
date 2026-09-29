@@ -26,6 +26,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 |---|---|---|
 | [CurrLyr](#currlyr) | `CurrentLayer.cs` | Sets the current layer, creating it if needed |
 | [LBS](#lbs) | `LayerBranchStyle.cs` | Creates and styles layer trees (colour + linetype) |
+| [CHL](#chl) | `ChangeLayer.cs` | Moves objects from one layer to another |
 
 ---
 
@@ -88,3 +89,34 @@ child layers, and a more specific path wins over a more general one.
 - It changes the Rhino document (not Grasshopper) and only when `Run` is True;
   the view refreshes automatically.
 - With no active Rhino document it reports an error instead of failing.
+
+---
+
+## CHL
+
+**File:** `ChangeLayer.cs`
+
+Moves **every object from a base layer onto a target layer**, creating the
+target layer (and any parents) if it does not exist. Good for re-organising a
+model by layer in one step.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Run` | item | Toggle True to move objects. Fires once on the True edge |
+| `BaseLayer` | tree | Full path(s) of the layer(s) to move objects FROM |
+| `TargetLayer` | tree | Full path(s) to move objects TO, matched to `BaseLayer` per branch. Created if missing |
+
+| Output | Meaning |
+|---|---|
+| `status` | What happened: working, done (with a count), idle, or an error |
+
+**Good to know**
+- **Fires once on the rising edge of `Run`.** After it runs, toggle `Run` off
+  then on again to repeat - this stops it looping when moving objects re-solves
+  the definition.
+- `BaseLayer` and `TargetLayer` must have the same branch structure. Within a
+  branch, a single target is reused for all base layers; otherwise they match
+  by position.
+- Target layers use `Parent::Child` for nesting and are created if missing.
+- Changes the Rhino document (not Grasshopper); the view refreshes
+  automatically, and a missing base layer is noted rather than fatal.
