@@ -12,7 +12,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) | Bisect Frame |
 | [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) | CenterDiv, PVL, CrvClass, IntAng, IntAngDom, AdaptDiv, PolyPlus, VarChamfer |
 | [`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) | Calci, RemThruHole, PSize, CrtFold, DelFiles, ModFold, TimerCnt |
-| [`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) | CullDupPt |
+| [`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) | CullDupPt, FarPts |
 
 ## All components
 
@@ -44,6 +44,7 @@ topic into branches — switch branch to see the code and full instructions.
 | ModFold | `utility` | Folder of the saved Rhino model and Grasshopper file path |
 | TimerCnt | `utility` | Counts up over time; loops, pauses and resets |
 | CullDupPt | `point` | Removes duplicate points within a tolerance |
+| FarPts | `point` | Finds the two points that are farthest apart |
 
 ## How to use a script
 
