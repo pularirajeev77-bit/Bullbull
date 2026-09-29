@@ -25,6 +25,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [RemThruHole](#remthruhole) | `RemoveThroughHoles.cs` | Removes through holes from Brep faces by size or index |
 | [PSize](#psize) | `PartSize.cs` | Length, width and height of a box |
 | [CrtFold](#crtfold) | `CreateFolder.cs` | Creates a folder on disk when toggled on |
+| [DelFiles](#delfiles) | `DeleteFiles.cs` | Deletes files of one extension from a folder |
 
 ---
 
@@ -151,3 +152,33 @@ True, so you can wire it up and preview the path safely first.
   `Path` (not at the drive root).
 - If the folder already exists, it is left as-is and `Msg` says so.
 - Errors (bad path, no permission) appear in `Msg` and as a warning on the component.
+
+---
+
+## DelFiles
+
+**File:** `DeleteFiles.cs`
+
+Deletes every file with a chosen extension from a folder. **Permanent - the
+files do not go to the Recycle Bin.** It only runs when `Button` is True, so
+wire it up first and check the folder before triggering.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `FolderPath` | item | Folder to delete files from (this folder only, not sub-folders) |
+| `FileExtension` | item | Extension to match, e.g. `.bak` or `txt` |
+| `Button` | item | Set True (use a Button) to delete now |
+
+| Output | Meaning |
+|---|---|
+| `Deleted` | Names of the files deleted (and any that failed, with the reason) |
+| `Msg` | Summary of what happened |
+
+**Good to know**
+- **Deletion is permanent.** There is no undo and nothing goes to the Recycle
+  Bin, so double-check `FolderPath` and `FileExtension` before pressing the button.
+- Only exact-extension matches are deleted: `.bak` will not also catch `.bak2`
+  (this guards against a Windows wildcard quirk where `*.xls` also matches `.xlsx`).
+- Only the named folder is touched, not its sub-folders.
+- Files in use are skipped and listed with their error in `Deleted`.
+- With `Button = False` nothing is deleted.
