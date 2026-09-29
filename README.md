@@ -22,6 +22,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | Component | File | What it does |
 |---|---|---|
 | [Calci](#calci) | `BullbullCalculation.cs` | Weight, area and volume of solids (Breps) |
+| [RemHole](#remhole) | `RemoveHoles.cs` | Removes holes from Brep faces by size or index |
 
 ---
 
@@ -55,3 +56,36 @@ metric units. Useful for quick material take-offs and mass estimates.
 - An invalid or open Brep gives `NaN` (not-a-number) for that item, so the
   outputs stay lined up with the input list.
 - No input gives empty lists.
+
+---
+
+## RemHole
+
+**File:** `RemoveHoles.cs`
+
+Removes **holes** (inner loops) from Brep faces. Pick which holes to remove:
+all of them, or only ones of a certain diameter, perimeter length or index.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Brep` | tree | The Breps to clean; the tree structure is kept |
+| `AllHoles` | item | True to remove every hole (ignores the three inputs below) |
+| `TargetDiameters` | list | Remove holes whose diameter matches one of these (within `Tolerance`). Diameter = loop length / pi |
+| `TargetLengths` | list | Remove holes whose perimeter length matches one of these (within `Tolerance`) |
+| `HoleIndices` | list | Remove holes by number (0 = first; `-1` = last), per Brep |
+| `Tolerance` | item | Match/geometry tolerance. 0 or less uses the model tolerance |
+
+| Output | Meaning |
+|---|---|
+| `Result` | The Breps with the matching holes removed, same tree structure as the input |
+
+**Example:** to remove every 20 mm hole, feed `TargetDiameters = 20` (with the
+file in mm). To remove all holes, set `AllHoles = true`.
+
+**Good to know**
+- Diameter is worked out as perimeter / pi, so it is exact for round holes and
+  only approximate for other shapes - match those by `TargetLengths` instead.
+- The criteria add up: a hole is removed if it matches **any** of index,
+  diameter or length.
+- If no criteria are given, the Breps pass through unchanged with a warning.
+- Empty or null input gives an empty result with a warning.
