@@ -25,6 +25,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | Component | File | What it does |
 |---|---|---|
 | [CurrLyr](#currlyr) | `CurrentLayer.cs` | Sets the current layer, creating it if needed |
+| [LBS](#lbs) | `LayerBranchStyle.cs` | Creates and styles layer trees (colour + linetype) |
 
 ---
 
@@ -52,3 +53,38 @@ it is created first, so new geometry lands on the layer you want.
 - It changes the Rhino document, not Grasshopper, and only when `Run` is True.
 - Runs on the active Rhino document; errors (no document, bad name) are
   reported in `Msg` and as a warning on the component.
+
+---
+
+## LBS
+
+**File:** `LayerBranchStyle.cs`
+
+Creates a **tree of layers** (nested with `::`) and sets each one's **colour**
+and **linetype** in one go. A style given for a parent path cascades down to its
+child layers, and a more specific path wins over a more general one.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Run` | item | Set True to apply; False does nothing |
+| `RootNames` | tree | Layer paths to create/style. Use `Parent::Child` for nesting |
+| `Colors` | tree | Layer colours, matched per branch and cycled if shorter (default black) |
+| `LineTypes` | tree | Linetype names, cycled if shorter |
+
+| Output | Meaning |
+|---|---|
+| `Result` | True for each layer created or modified |
+| `Info` | Log of what was created and changed |
+
+**Linetype names accepted:** `Continuous` (also `cont`/`default`), `Hidden`,
+`Dashed`, `Dot`/`Dotted`, `Center`, or any linetype already in the document
+(a close partial match is used if an exact one isn't found).
+
+**Good to know**
+- **Cascading:** a colour set on `Frame` applies to `Frame::Steel` too, unless
+  `Frame::Steel` has its own entry - the deepest matching path wins.
+- Nested layers are created as real sub-layers; parents made on the way are
+  black, only the leaf gets the given colour.
+- It changes the Rhino document (not Grasshopper) and only when `Run` is True;
+  the view refreshes automatically.
+- With no active Rhino document it reports an error instead of failing.
