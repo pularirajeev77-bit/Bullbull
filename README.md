@@ -16,7 +16,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`surface`](https://github.com/pularirajeev77-bit/Bullbull/tree/surface) | EdgeAn |
 | [`Plane`](https://github.com/pularirajeev77-bit/Bullbull/tree/Plane) | CamPlane |
 | [`Layers`](https://github.com/pularirajeev77-bit/Bullbull/tree/Layers) | CurrLyr, LBS, CHL, DLM |
-| [`display`](https://github.com/pularirajeev77-bit/Bullbull/tree/display) | Zebra, GoldEmap |
+| [`display`](https://github.com/pularirajeev77-bit/Bullbull/tree/display) | Zebra, GoldEmap, CrvProp |
 
 ## All components
 
@@ -62,6 +62,7 @@ topic into branches — switch branch to see the code and full instructions.
 | DLM | `Layers` | Shows/hides layers inside layout details |
 | Zebra | `display` | Zebra-stripe surface analysis in the viewport |
 | GoldEmap | `display` | Brushed-gold reflection map on geometry |
+| CrvProp | `display` | Reports a curve's length, domain, type and more |
 
 ## How to use a script
 
