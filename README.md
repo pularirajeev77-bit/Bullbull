@@ -27,6 +27,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [CrtFold](#crtfold) | `CreateFolder.cs` | Creates a folder on disk when toggled on |
 | [DelFiles](#delfiles) | `DeleteFiles.cs` | Deletes files of one extension from a folder |
 | [ModFold](#modfold) | `RhinoModelFolder.cs` | Folder of the saved Rhino model and Grasshopper file path |
+| [TimerCnt](#timercnt) | `TimerCounter.cs` | Counts up over time; loops, pauses and resets |
 
 ---
 
@@ -209,3 +210,35 @@ Grasshopper file** - handy for saving exports next to the current file.
 - `Rh_path` is the folder; `Gh_path` is the full file path (including the file name).
 - `Gh_path` reads this component's own document, so it is correct even if
   another Grasshopper window is in focus.
+
+---
+
+## TimerCnt
+
+**File:** `TimerCounter.cs`
+
+A **timed counter**: counts up from `start` to `end`, one step every `delay`
+milliseconds. Good for driving animations, step-throughs or slideshows.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `start` | item | First count value |
+| `end` | item | Last count value (must be greater than `start`) |
+| `delay` | item | Milliseconds per step. 0 or less uses 100 |
+| `loop` | item | True = jump back to `start` after `end` instead of stopping |
+| `Run` | item | True = count; False = pause (keeps the current value) |
+| `reset` | item | True = set the count back to `start` and stop |
+
+| Output | Meaning |
+|---|---|
+| `I` | Current count value |
+| `pct` | Progress from `start` to `end`, 0-100 % |
+
+**Good to know**
+- **Each component keeps its own state**, so you can run several timers at once
+  without them interfering (the original shared one counter across all of them).
+- Counts **up only**: `end` must be greater than `start`. If not, it just
+  returns `start` at 100 %.
+- While `Run` is True the component re-runs itself continuously, which uses some
+  CPU - switch `Run` off when you don't need it.
+- Pausing keeps the current value; `reset` returns it to `start`.
