@@ -20,13 +20,14 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 3. The component takes its inputs and outputs from the `RunScript(...)` line.
    If they don't appear, add them by hand with the exact same names.
 
-Set both inputs to **list** access.
+Access types are listed per component below.
 
 ## Components
 
 | Component | File | What it does |
 |---|---|---|
 | [sharedNodes](#sharednodes) | `SharedNodes.cs` | Groups curves by the nodes they start or end at |
+| [nodeSize](#nodesize) | `NodeSize.cs` | Sizes a node from the smallest angle between its members |
 
 ---
 
@@ -57,4 +58,42 @@ output is a tree with **one branch per node**, so branch `{i}` belongs to
 - A closed curve (start = end) is counted once at its node (before it was listed twice).
 - Empty/missing inputs now give a warning instead of silently returning nothing.
 - Inputs/outputs were renamed from `curves, points, lines, lin_index, pts, pt_index, unique_pts`.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## nodeSize
+
+**File:** `NodeSize.cs`
+
+Sizes a **space-frame node**. It takes the members meeting at one node, finds the
+two that are closest together (smallest angle), and from that angle works out how
+long/large the node must be so the members clear each other.
+
+`Length = Diameter / sin(Angle / 2) + Thickness`, then `Radius` is `Length`
+rounded **up** to a multiple of `Rounding`.
+
+Feed it from `sharedNodes`: `NodeCurves` -> `Curves` and `UniqueNodes` -> `Node`.
+`Curves` is a list and `Node` an item, so the component runs once per node.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Curves` | list | Members touching this node |
+| `Node` | item | The node point |
+| `Thickness` | item | Added wall thickness (0 or less uses 10) |
+| `Diameter` | item | Member diameter to clear (0 or less uses 12) |
+| `Rounding` | item | Radius rounds up to a multiple of this (0 or less uses 1) |
+
+| Output | Meaning |
+|---|---|
+| `Angle` | Smallest angle between two members, degrees |
+| `Length` | Node length from the formula above |
+| `Radius` | `Length` rounded up to `Rounding` |
+| `RefPoint` | The node point |
+
+**Good to know**
+- With fewer than two usable members, or two overlapping members (angle ~0), the
+  size outputs stay empty and a message explains why.
+- Inputs/outputs were renamed from `lines, unique_pts, thk, dia, round` and
+  `angle, length, radius, refpoint`.
 - Not compiled here (no Rhino) - test in Grasshopper.
