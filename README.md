@@ -19,7 +19,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`display`](https://github.com/pularirajeev77-bit/Bullbull/tree/display) | Zebra, GoldEmap, CrvProp |
 | [`SpaceFrame`](https://github.com/pularirajeev77-bit/Bullbull/tree/SpaceFrame) | sharedNodes, nodeSize, HardLook |
 | [`Creation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Creation) | Bake, CadExport, SolidExport, CNCExport |
-| [`Tree`](https://github.com/pularirajeev77-bit/Bullbull/tree/Tree) | CreateTree, TreeSwap |
+| [`Tree`](https://github.com/pularirajeev77-bit/Bullbull/tree/Tree) | CreateTree, TreeSwap, TreeSwap+ |
 
 ## All components
 
@@ -76,6 +76,7 @@ topic into branches — switch branch to see the code and full instructions.
 | CNCExport | `Creation` | Exports one DWG/DXF per panel with per-layer colours and linetypes |
 | CreateTree | `Tree` | Sorts a flat list into branches by index (like Elefront Create Tree) |
 | TreeSwap | `Tree` | Swaps the first two path indices ({A;B} -> {B;A}) |
+| TreeSwap+ | `Tree` | Swaps indices for 2+ names, prefixes {0} for 1 name |
 
 ## How to use a script
 
