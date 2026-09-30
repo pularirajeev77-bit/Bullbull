@@ -19,6 +19,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`display`](https://github.com/pularirajeev77-bit/Bullbull/tree/display) | Zebra, GoldEmap, CrvProp |
 | [`SpaceFrame`](https://github.com/pularirajeev77-bit/Bullbull/tree/SpaceFrame) | sharedNodes, nodeSize, HardLook |
 | [`Creation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Creation) | Bake, CadExport, SolidExport, CNCExport |
+| [`Tree`](https://github.com/pularirajeev77-bit/Bullbull/tree/Tree) | CreateTree |
 
 ## All components
 
@@ -73,6 +74,7 @@ topic into branches — switch branch to see the code and full instructions.
 | CadExport | `Creation` | Exports points, curves and text to a DWG/DXF file on one layer |
 | SolidExport | `Creation` | Exports one DWG/DXF per branch with breps as ACIS solids |
 | CNCExport | `Creation` | Exports one DWG/DXF per panel with per-layer colours and linetypes |
+| CreateTree | `Tree` | Sorts a flat list into branches by index (like Elefront Create Tree) |
 
 ## How to use a script
 
