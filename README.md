@@ -28,6 +28,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [PtOnCrv](#ptoncrv) | `PointOnCurve.cs` | Tests which points lie on curves, per branch |
 | [RadSort](#radsort) | `RadialSort.cs` | Sorts points counter-clockwise around a plane |
 | [WeightSort](#weightsort) | `WeightedSort.cs` | Sorts points by a weighted key of X, Y, Z |
+| [UVSort](#uvsort) | `SurfaceUVSort.cs` | Sorts points row by row by their UV on a surface |
 
 ---
 
@@ -218,3 +219,43 @@ Key = `X_Mult * X^2 + Y_Mult * Y^2 + Z_Mult * Z^2`
 - For a plain signed sort along a direction, sort by a dot product with that
   direction instead.
 - `Indices` lets you reorder other lists the same way.
+
+---
+
+## UVSort
+
+**File:** `SurfaceUVSort.cs`
+
+Sorts points **row by row using their UV position on a surface** - the natural
+order for panel nodes, grid points or fixings on a curved facade. Points whose
+primary parameter is within `Tolerance` form one row; rows run along the primary
+axis and points inside each row along the other axis.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Points` | list | Points on or near the surface |
+| `Surface` | item | Target surface |
+| `SortUFirst` | item | True = rows by U (then V), False = rows by V (then U) |
+| `Tolerance` | item | Row grouping tolerance, **surface parameter units** (0 = 0.001) |
+
+| Output | Meaning |
+|---|---|
+| `SortedPoints` | Points in sorted order |
+| `UVParams` | Their `(u, v)` on the surface |
+| `OriginalIndices` | Index of each sorted point in the input |
+
+**Good to know**
+- **Row split fix:** the old version rounded parameters to a grid of `Tolerance`,
+  so two points almost on the same row but either side of a rounding boundary
+  (e.g. `u = 0.0049` and `0.0051`) landed in different rows. Rows are now built
+  by gap: a new row starts only when the jump exceeds `Tolerance`.
+- `Tolerance` is in the surface's **parameter** units, which depend on how the
+  surface is parameterised (often its real size in model units, sometimes 0-1).
+  Reparameterize the surface to 0-1 if you want a size-independent tolerance.
+- Points that cannot be projected are reported in a warning (before they
+  vanished silently, leaving `OriginalIndices` shorter than the input).
+- Added the missing `using Grasshopper.Kernel;` (needed for the script base
+  class); messages show on the component instead of `Print`; the message shows
+  the row count.
+- Renamed `Srf` -> `Surface`. Metadata and tooltips set once.
+- Not compiled here (no Rhino) - test in Grasshopper.
