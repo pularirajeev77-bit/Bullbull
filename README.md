@@ -18,7 +18,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`Layers`](https://github.com/pularirajeev77-bit/Bullbull/tree/Layers) | CurrLyr, LBS, CHL, DLM |
 | [`display`](https://github.com/pularirajeev77-bit/Bullbull/tree/display) | Zebra, GoldEmap, CrvProp |
 | [`SpaceFrame`](https://github.com/pularirajeev77-bit/Bullbull/tree/SpaceFrame) | sharedNodes, nodeSize, HardLook |
-| [`Creation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Creation) | Bake, CadExport |
+| [`Creation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Creation) | Bake, CadExport, SolidExport |
 
 ## All components
 
@@ -71,6 +71,7 @@ topic into branches — switch branch to see the code and full instructions.
 | HardLook | `SpaceFrame` | Looks up bolt/sleeve/cone/thread sizes for a pipe diameter from Excel |
 | Bake | `Creation` | Bakes geometry with name, layer, colour, print width, isocurves and grouping |
 | CadExport | `Creation` | Exports points, curves and text to a DWG/DXF file on one layer |
+| SolidExport | `Creation` | Exports one DWG/DXF per branch with breps as ACIS solids |
 
 ## How to use a script
 
