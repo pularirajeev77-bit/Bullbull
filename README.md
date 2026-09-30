@@ -30,6 +30,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [BlockAttExtract](#blockattextract) | `BlockAttExtract.cs` | Reads a title block's attribute text (key/value) from each layout |
 | [KeySearch](#keysearch) | `TitleBlockKeySearch.cs` | Flags which title-block keys contain any of the search keys |
 | [BlockAttEditor](#blockatteditor) | `BlockAttEditor.cs` | Writes attribute text (key/value) back onto the title block on each layout |
+| [SrchBlk](#srchblk) | `SearchBlock.cs` | Finds block names containing a search text |
 
 ---
 
@@ -166,4 +167,40 @@ same issue date on all sheets).
   mismatches; the message shows `changed | layouts`.
 - Renamed outputs `OK, Msg, Changed` -> `Success, Summary, ChangedCount`;
   `LayoutNames` is now a plain text list. Metadata and tooltips added.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## SrchBlk
+
+**File:** `SearchBlock.cs`
+
+Finds the **block names** that contain a search text (case-insensitive) - e.g.
+type `title` to find the exact title-block name to feed into
+[BlockAttExtract](#blockattextract) / [BlockAttEditor](#blockatteditor).
+Works on any list of text.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `BlockNames` | list | Block names (or any text) to search |
+| `Search` | item | Text to look for, e.g. `title` |
+
+| Output | Meaning |
+|---|---|
+| `Matches` | Names that contain the search text (original spelling) |
+| `MatchIndex` | Their indices in `BlockNames` |
+
+**Good to know**
+- **Trees fixed:** the old `object` inputs were item access, so the component ran
+  once per name and the home-made tree converter never saw a list; a tree input
+  was also flattened into one list. Now `BlockNames` is list access and
+  Grasshopper runs once per branch, so output branches match the input.
+- Matching is a substring test (`title` finds `A1_TitleBlock`); original case is
+  kept in the output.
+- New `MatchIndex` output (use with List Item on any parallel list).
+- Warnings on empty inputs; a remark when nothing matches; the message shows
+  `matches/names`. Errors no longer go only to `Print`.
+- Renamed: `block_list, search_block` / `block_results` ->
+  `BlockNames, Search` / `Matches` (+ `MatchIndex`). Name typo (trailing space)
+  fixed; metadata and tooltips set once.
 - Not compiled here (no Rhino) - test in Grasshopper.
