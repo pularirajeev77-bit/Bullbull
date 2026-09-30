@@ -23,6 +23,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | Component | File | What it does |
 |---|---|---|
 | [EdgeAn](#edgean) | `EdgeAnalyzer.cs` | Sorts a Brep's edges: outer, inner, naked, interior, non-manifold |
+| [DraftThick](#draftthick) | `DraftedThicken.cs` | Thickens a surface/polysurface/closed brep along its normals with a draft angle |
 
 ---
 
@@ -62,3 +63,37 @@ groups - useful for finding open borders, holes, or bad (non-manifold) edges.
   hole. Non-manifold edges usually point to a modelling problem.
 - Accepts anything Grasshopper can turn into a Brep (surfaces, boxes,
   extrusions, SubD, ...).
+
+---
+
+## DraftThick
+
+**File:** `DraftedThicken.cs`
+
+Thickens a **surface, polysurface or closed brep** along its local normals and
+gives the open edges a **draft angle** (walls lean inward or outward), returning
+a solid. A closed brep becomes a hollow shell (outer + inner skin).
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Surface` | item | Surface, polysurface or closed brep to thicken |
+| `Height` | item | Thickness along the local normal (negative = other side) |
+| `Angle` | item | Draft angle in degrees (0 = walls normal to the surface) |
+| `FlipSide` | item | False = draft inward, True = draft outward |
+| `MiterLimit` | item | Max corner overshoot x draft offset (0 = off, try 2) |
+| `AutoFit` | item | Reduce the draft automatically if the top folds over |
+| `MergeFaces` | item | Merge coplanar faces in the result |
+| `FastZero` | item | Use Rhino's own offset when `Angle` = 0 (open breps) |
+| `WallsOnly` | item | Output only the side walls (no base / top cap) |
+
+| Output | Meaning |
+|---|---|
+| `Solid` | Drafted solid, hollow solid for closed input, or walls only |
+
+**Good to know**
+- Closed breps ignore `Angle` / `FlipSide` (there are no open edges).
+- The output was renamed from `Brep` to `Solid` so the Brep type can be used
+  freely inside the script; the input `Breps` became `Surface` (it is one item).
+- Warnings and remarks (folded top, join tolerance, invalid result) appear as
+  runtime messages on the component.
+- Not compiled here (no Rhino) - test in Grasshopper and report any odd cases.
