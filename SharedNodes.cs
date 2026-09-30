@@ -1,11 +1,9 @@
 /*
   Author: Rajeev Pulari + Gemini
   Rhino 8 | Grasshopper C#
-  Version: 2026.09.30
-  Component: Shared Nodes v2.3
-  Description: For every node (point), collects the curves whose start or end
-               touches it (within Tolerance). One tree branch per node, aligned
-               with the Points input list.
+  Version: 2026.04.06
+  Component: SharedNodes v2.0
+  Description: Groups curves based on shared nodes/points with 6-decimal tolerance.
 */
 
 using System;
@@ -23,202 +21,126 @@ using Grasshopper.Kernel.Types;
 
 public class Script_Instance : GH_ScriptInstance
 {
-    // Full-word names (were curves/points and lines/lin_index/pts/pt_index/unique_pts)
     private void RunScript(
-        List<Curve> Curves,
-        List<Point3d> Points,
-        double Tolerance,
-        ref object NodeCurves,
-        ref object CurveIndices,
-        ref object NodePoints,
-        ref object NodeIndices,
-        ref object UniqueNodes)
+		List<Curve> curves,
+		List<Point3d> points,
+		ref object lines,
+		ref object lin_index,
+		ref object pts,
+		ref object pt_index,
+		ref object unique_pts)
     {
-        // Metadata + pin tooltips (once)
-        if (this.Component != null && this.Component.Name != "Group Curves Shared Nodes")
+        // --------------------------------------------------------------
+        // 0️⃣ Set Component Metadata (Rhino 8 Native)
+        // --------------------------------------------------------------
+        if (this.Component != null)
         {
             this.Component.Name = "Group Curves Shared Nodes";
             this.Component.NickName = "sharedNodes";
-            this.Component.Message = "Shared Nodes v2.3";
-            this.Component.Description = "Groups curves by the nodes (points) they start or end at. One tree branch per node.";
-
-            SetTip(this.Component.Params.Input, "Curves", "Curves (e.g. frame members) to group by their end points.");
-            SetTip(this.Component.Params.Input, "Points", "Nodes to test. Branch i of every output belongs to Points[i].");
-            SetTip(this.Component.Params.Input, "Tolerance", "A curve end within this distance of a node counts as touching it. Zero or less uses the model tolerance. Item access.");
-            SetTip(this.Component.Params.Output, "NodeCurves", "Curves touching each node (one branch per node).");
-            SetTip(this.Component.Params.Output, "CurveIndices", "Index in Curves of each curve found at the node.");
-            SetTip(this.Component.Params.Output, "NodePoints", "The node point repeated once per touching curve.");
-            SetTip(this.Component.Params.Output, "NodeIndices", "Index in Points of the node, repeated once per touching curve.");
-            SetTip(this.Component.Params.Output, "UniqueNodes", "One point per node that has at least one curve.");
+            this.Component.Message = "Shared Nodes v2.0";
         }
 
-        if (Points == null || Points.Count == 0)
-        {
-            this.Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No Points supplied.");
-            return;
-        }
-        if (Curves == null || Curves.Count == 0)
-        {
-            this.Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No Curves supplied.");
-            return;
-        }
+        // 1. Initialize Outputs as DataTrees
+        DataTree<Curve> treeLines = new DataTree<Curve>();
+        DataTree<int> treeLinIndex = new DataTree<int>();
+        DataTree<Point3d> treePts = new DataTree<Point3d>();
+        DataTree<int> treePtIndex = new DataTree<int>();
+        DataTree<Point3d> treeUniquePts = new DataTree<Point3d>();
 
-        // GH_Structure with explicit GH types: the classic, reliable way to return trees
-        // (a DataTree<Curve> can arrive empty because Curve is an abstract type)
-        var treeCurves = new GH_Structure<GH_Curve>();
-        var treeCurveIdx = new GH_Structure<GH_Integer>();
-        var treePts = new GH_Structure<GH_Point>();
-        var treePtIdx = new GH_Structure<GH_Integer>();
-        var treeUnique = new GH_Structure<GH_Point>();
-
-        // Tolerance: input, else model tolerance, else 0.001
-        double tol = Tolerance;
-        if (tol <= 0)
-            tol = (RhinoDoc.ActiveDoc != null) ? RhinoDoc.ActiveDoc.ModelAbsoluteTolerance : 0.001;
-        if (tol <= 0) tol = 0.001;
-        if (this.Component != null)
-            this.Component.Message = "Shared Nodes v2.3 | tol " + tol.ToString("0.######");
-
-        // Spatial hash: cell size = tol, so a match is always in the 3x3x3 neighbouring cells
-        var grid = new Dictionary<Tuple<long, long, long>, List<int>>();
-        for (int i = 0; i < Points.Count; i++)
+        // 2. Setup Point Mapping (Tolerance-based key using a Tuple)
+        var point_map = new Dictionary<Tuple<double, double, double>, int>();
+        if (points != null)
         {
-            var cell = CellOf(Points[i], tol);
-            List<int> bucket;
-            if (!grid.TryGetValue(cell, out bucket))
+            for (int i = 0; i < points.Count; i++)
             {
-                bucket = new List<int>();
-                grid[cell] = bucket;
+                var key = PointKey(points[i]);
+                if (!point_map.ContainsKey(key))
+                {
+                    point_map[key] = i;
+                }
             }
-            bucket.Add(i);
         }
 
-        int count = Points.Count;
-        var groupedCurves = new List<Curve>[count];
-        var groupedIndex = new List<int>[count];
-        var groupedPts = new List<Point3d>[count];
+        // 3. Prepare list of lists for processing
+        int count = points != null ? points.Count : 0;
+        if (count == 0) return;
+
+        List<Curve>[] groupedLines = new List<Curve>[count];
+        List<int>[] groupedIndex = new List<int>[count];
+        List<Point3d>[] groupedPts = new List<Point3d>[count];
+        List<int>[] groupedPtIndex = new List<int>[count];
+
         for (int i = 0; i < count; i++)
         {
-            groupedCurves[i] = new List<Curve>();
+            groupedLines[i] = new List<Curve>();
             groupedIndex[i] = new List<int>();
             groupedPts[i] = new List<Point3d>();
+            groupedPtIndex[i] = new List<int>();
         }
 
-        for (int i = 0; i < Curves.Count; i++)
+        // 4. Process Curves
+        if (curves != null)
         {
-            Curve crv = Curves[i];
-            if (crv == null) continue;
-
-            Point3d start = crv.PointAtStart;
-            Point3d end = crv.PointAtEnd;
-
-            int startIdx = FindNode(grid, Points, start, tol);
-            int endIdx = FindNode(grid, Points, end, tol);
-
-            if (startIdx >= 0)
+            for (int i = 0; i < curves.Count; i++)
             {
-                groupedCurves[startIdx].Add(crv);
-                groupedIndex[startIdx].Add(i);
-                groupedPts[startIdx].Add(start);
-            }
-            // A curve whose two ends land on the same node is counted once
-            if (endIdx >= 0 && endIdx != startIdx)
-            {
-                groupedCurves[endIdx].Add(crv);
-                groupedIndex[endIdx].Add(i);
-                groupedPts[endIdx].Add(end);
+                Curve crv = curves[i];
+                if (crv == null) continue;
+
+                Point3d[] ends = new Point3d[] { crv.PointAtStart, crv.PointAtEnd };
+
+                foreach (Point3d pt in ends)
+                {
+                    var key = PointKey(pt);
+                    if (point_map.ContainsKey(key))
+                    {
+                        int idx = point_map[key];
+                        groupedLines[idx].Add(crv);
+                        groupedIndex[idx].Add(i);
+                        groupedPts[idx].Add(pt);
+                        groupedPtIndex[idx].Add(idx);
+                    }
+                }
             }
         }
 
-        int matchedNodes = 0;
-        int matchedEnds = 0;
+        // 5. Build Trees and Handle Unique Points per branch
         for (int i = 0; i < count; i++)
         {
             GH_Path path = new GH_Path(i);
-            treeCurves.EnsurePath(path);
-            treeCurveIdx.EnsurePath(path);
-            treePts.EnsurePath(path);
-            treePtIdx.EnsurePath(path);
-            treeUnique.EnsurePath(path);
+            
+            treeLines.AddRange(groupedLines[i], path);
+            treeLinIndex.AddRange(groupedIndex[i], path);
+            treePts.AddRange(groupedPts[i], path);
+            treePtIndex.AddRange(groupedPtIndex[i], path);
 
-            for (int k = 0; k < groupedCurves[i].Count; k++)
+            // Per-branch de-duplication logic
+            HashSet<Tuple<double, double, double>> seenInBranch = new HashSet<Tuple<double, double, double>>();
+            foreach (Point3d pt in groupedPts[i])
             {
-                treeCurves.Append(new GH_Curve(groupedCurves[i][k].DuplicateCurve()), path);
-                treeCurveIdx.Append(new GH_Integer(groupedIndex[i][k]), path);
-                treePts.Append(new GH_Point(groupedPts[i][k]), path);
-                treePtIdx.Append(new GH_Integer(i), path);
-            }
-            matchedEnds += groupedCurves[i].Count;
-
-            // every point in a branch is the same node -> one unique point
-            if (groupedPts[i].Count > 0)
-            {
-                treeUnique.Append(new GH_Point(Points[i]), path);
-                matchedNodes++;
+                var k = PointKey(pt);
+                if (!seenInBranch.Contains(k))
+                {
+                    seenInBranch.Add(k);
+                    treeUniquePts.Add(pt, path);
+                }
             }
         }
 
-        if (matchedEnds == 0)
-            this.Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
-                "No curve end is within " + tol.ToString("0.######") + " of any point. Check that Points are the curve end points, or raise Tolerance.");
-        else
-            this.Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark,
-                matchedNodes + " of " + count + " nodes have curves; " + matchedEnds + " curve ends matched (of " + (Curves.Count * 2) + ").");
-
-        NodeCurves = treeCurves;
-        CurveIndices = treeCurveIdx;
-        NodePoints = treePts;
-        NodeIndices = treePtIdx;
-        UniqueNodes = treeUnique;
+        // 6. Assign to Outputs
+        lines = treeLines;
+        lin_index = treeLinIndex;
+        pts = treePts;
+        pt_index = treePtIndex;
+        unique_pts = treeUniquePts;
     }
 
-    private Tuple<long, long, long> CellOf(Point3d pt, double tol)
+    // Helper method for point key (Rounding to 6 decimals)
+    private Tuple<double, double, double> PointKey(Point3d pt)
     {
-        return new Tuple<long, long, long>(
-            (long)Math.Floor(pt.X / tol),
-            (long)Math.Floor(pt.Y / tol),
-            (long)Math.Floor(pt.Z / tol));
-    }
-
-    // Index of the closest node within tol of pt, or -1 (ties: lowest index)
-    private int FindNode(Dictionary<Tuple<long, long, long>, List<int>> grid, List<Point3d> nodes, Point3d pt, double tol)
-    {
-        var c = CellOf(pt, tol);
-        int best = -1;
-        double bestDist = double.MaxValue;
-        for (long dx = -1; dx <= 1; dx++)
-            for (long dy = -1; dy <= 1; dy++)
-                for (long dz = -1; dz <= 1; dz++)
-                {
-                    List<int> bucket;
-                    if (!grid.TryGetValue(new Tuple<long, long, long>(c.Item1 + dx, c.Item2 + dy, c.Item3 + dz), out bucket))
-                        continue;
-                    foreach (int idx in bucket)
-                    {
-                        double d = nodes[idx].DistanceTo(pt);
-                        if (d <= tol && (d < bestDist || (d == bestDist && idx < best)))
-                        {
-                            bestDist = d;
-                            best = idx;
-                        }
-                    }
-                }
-        return best;
-    }
-
-    // Find the pin by its variable name (not by index): Rhino's script component can
-    // have an extra "out" pin at output index 0, which shifted every name by one.
-    private void SetTip(IList<IGH_Param> ps, string name, string tip)
-    {
-        if (ps == null) return;
-        IGH_Param hit = null;
-        foreach (IGH_Param p in ps)
-            if (string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
-        if (hit == null)
-            foreach (IGH_Param p in ps)
-                if (string.Equals(p.NickName, name, StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
-        if (hit == null) return;
-        hit.NickName = name;
-        hit.Description = tip;
+        return new Tuple<double, double, double>(
+            Math.Round(pt.X, 6),
+            Math.Round(pt.Y, 6),
+            Math.Round(pt.Z, 6)
+            );
     }
 }
