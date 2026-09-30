@@ -28,6 +28,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | Component | File | What it does |
 |---|---|---|
 | [BlockAttExtract](#blockattextract) | `BlockAttExtract.cs` | Reads a title block's attribute text (key/value) from each layout |
+| [KeySearch](#keysearch) | `TitleBlockKeySearch.cs` | Flags which title-block keys contain any of the search keys |
 
 ---
 
@@ -68,4 +69,47 @@ Branch `{k}` of `Keys` and `Values` belongs to `FoundLayouts[k]`.
 - Renamed output `LNames` -> `FoundLayouts`. Added metadata: a header block
   listing every input/output, component Name / NickName / Description, tooltips on
   every pin, and a Message that shows how many layouts were found (e.g. `3/4 layouts`).
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## KeySearch
+
+**File:** `TitleBlockKeySearch.cs`
+
+Finds which **title-block keys** (from [BlockAttExtract](#blockattextract))
+contain any of your **search keys** - e.g. find the `DRAWING NO` or `REVISION`
+key on every layout, then pick the matching value.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Keys` | list | Attribute keys - connect BlockAttExtract `Keys` |
+| `SearchKeys` | list | Words or phrases to look for |
+
+| Output | Meaning |
+|---|---|
+| `Matches` | True / False per key |
+| `MatchIndex` | Indices of the matching keys |
+| `Summary` | `n match(es) out of m keys` |
+
+**Typical wiring**
+
+```
+BlockAttExtract.Keys   -> KeySearch.Keys
+"drawing no"           -> KeySearch.SearchKeys
+KeySearch.MatchIndex   -> List Item (index)
+BlockAttExtract.Values -> List Item (list)    => the drawing number of every layout
+```
+
+Because `Keys` is list access and BlockAttExtract gives one branch per layout,
+KeySearch runs once per layout and its outputs keep the same `{k}` branches.
+
+**Good to know**
+- Whole-word, case-insensitive: `no` matches `Drawing No` but not `Note`.
+- **Multi-word search keys now work** (`drawing no`). The old version split the
+  text into single words, so any search containing a space could never match.
+- Tabs, newlines and double spaces count as one space.
+- Empty inputs give a warning on the component; the message shows `matches/keys`.
+- Renamed from SearchText: `Texts, Words` / `Result, Index, Msg` ->
+  `Keys, SearchKeys` / `Matches, MatchIndex, Summary`.
 - Not compiled here (no Rhino) - test in Grasshopper.
