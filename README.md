@@ -27,6 +27,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | Component | File | What it does |
 |---|---|---|
 | [CreateTree](#createtree) | `CreateTree.cs` | Sorts a flat list into branches by index (like Elefront Create Tree) |
+| [TreeSwap](#treeswap) | `TreeSwap.cs` | Swaps the first two path indices ({A;B} -> {B;A}) |
 
 ---
 
@@ -56,4 +57,37 @@ Example: `Data = a, b, c, d` and `BranchIndex = 2, 0, 2, 1` gives
 - Negative indices are skipped with a warning (Grasshopper paths can't be negative).
 - A remark shows if `BranchIndex` and `Data` have different lengths.
 - Inputs/outputs renamed from `Data, Index` / `DataOut`.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## TreeSwap
+
+**File:** `TreeSwap.cs`
+
+Swaps the **first two indices of every branch path**: `{A;B;...}` becomes
+`{B;A;...}` - e.g. turn rows into columns, or regroup "per panel / per layer"
+into "per layer / per panel". Deeper indices are left alone. A flat tree `{i}`
+becomes `{0;i}`.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Data` | tree | Tree to swap |
+
+| Output | Meaning |
+|---|---|
+| `SwappedTree` | Tree with the first two path indices swapped |
+
+Example: `{0;0} a` &middot; `{0;1} b` &middot; `{1;0} c` &middot; `{1;1} d`
+becomes `{0;0} a` &middot; `{0;1} c` &middot; `{1;0} b` &middot; `{1;1} d`.
+
+**Good to know**
+- Output branches are **sorted**, so everything with the same new first index
+  sits together (the old version kept the input order, which interleaved them).
+- Empty branches are kept.
+- Mixed-depth input (e.g. `{1}` next to `{1;0}`) can map two branches onto the
+  same path; they are merged and a warning tells you how many.
+- An empty input now gives a warning instead of a silent empty tree.
+- Output renamed from `outTree` to `SwappedTree`; the component name typo
+  ("Swaping") is fixed.
 - Not compiled here (no Rhino) - test in Grasshopper.
