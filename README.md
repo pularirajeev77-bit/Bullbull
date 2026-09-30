@@ -24,6 +24,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 |---|---|---|
 | [EdgeAn](#edgean) | `EdgeAnalyzer.cs` | Sorts a Brep's edges: outer, inner, naked, interior, non-manifold |
 | [DraftThick](#draftthick) | `DraftedThicken.cs` | Thickens a surface/polysurface/closed brep along its normals with a draft angle |
+| [SrfExt](#srfext) | `SurfaceExtender.cs` | Extends surfaces by a distance on each side (N/E/S/W) |
 
 ---
 
@@ -97,3 +98,42 @@ a solid. A closed brep becomes a hollow shell (outer + inner skin).
 - Warnings and remarks (folded top, join tolerance, invalid result) appear as
   runtime messages on the component.
 - Not compiled here (no Rhino) - test in Grasshopper and report any odd cases.
+
+---
+
+## SrfExt
+
+**File:** `SurfaceExtender.cs`
+
+Extends one or more **surfaces** (or every face of a Brep) by a distance on each
+side, keeping the surface smooth (curvature-continuous extension). Can also give
+you the frame at the centre of each original surface.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Surfaces` | list | Surfaces or Breps (each face is extended) |
+| `North` | item | Extension at the v-max edge |
+| `East` | item | Extension at the u-max edge |
+| `South` | item | Extension at the v-min edge |
+| `West` | item | Extension at the u-min edge |
+| `CenterPlanes` | item | True = also output centre frames |
+
+| Output | Meaning |
+|---|---|
+| `Extended` | Extended surfaces as Breps |
+| `Planes` | Centre frames of the original surfaces (when `CenterPlanes` is True) |
+
+**Good to know**
+- North/East/South/West follow the surface's **UV directions**, not the world
+  compass - use Flip / Swap UV on the input if the wrong side extends.
+- If one side can't be extended (e.g. a closed/periodic direction), that side is
+  left as is and a warning counts it. Before, the failed step returned nothing
+  and the next one crashed, so **every** remaining surface was lost.
+- Breps are handled face by face; the **untrimmed** underlying surface is
+  extended, so trims are not kept.
+- Negative distances are ignored with a warning (extend can't shrink).
+- Wrapped Grasshopper inputs and extrusions are accepted; non-surfaces are
+  counted in a warning. Errors show on the component (was `Print`).
+- Renamed: `Srf, N, E, S, W, T` / `Surf, Pln` ->
+  `Surfaces, North, East, South, West, CenterPlanes` / `Extended, Planes`.
+- Not compiled here (no Rhino) - test in Grasshopper.
