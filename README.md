@@ -27,6 +27,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 |---|---|---|
 | [Bake](#bake) | `BakePro.cs` | Bakes geometry with name, layer, colour, print width, isocurves and grouping |
 | [CadExport](#cadexport) | `CadExport.cs` | Exports points, curves and text to a DWG/DXF file on one layer |
+| [SolidExport](#solidexport) | `SolidExport.cs` | Exports one DWG/DXF per branch with breps as ACIS solids ("2018 Solid" scheme) |
 
 ---
 
@@ -117,4 +118,56 @@ deleted again - nothing is left in your Rhino model.
 - Inputs/outputs renamed from `export, exportType, filePath, fileName,
   layerName, layerColor, points, curves, textLocs, texts, textSize` / `result`.
 - Export options use Rhino's current DWG/DXF export scheme.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## SolidExport
+
+**File:** `SolidExport.cs`
+
+Exports **one DWG/DXF file per tree branch**: branch `i` of `Solids`, `Points`
+and `Annotations` goes into the file named by branch `i` of `FileNames`. It
+forces Rhino's **"2018 Solid"** export scheme so breps arrive in AutoCAD as ACIS
+solids instead of wireframe. Objects are baked only for the export and removed
+again.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Export` | item | Exports once each time it goes False -> True (use a **Button**) |
+| `FileType` | item | `DWG` or `DXF` (empty = DWG) |
+| `FileNames` | tree | One name per branch (first item, no extension) |
+| `Folder` | item | Existing folder to save into |
+| `Solids` | tree | Breps per file; open planar holes are capped |
+| `Points` | tree | Points per file (same layer as the solids) |
+| `Annotations` | tree | Text, leaders, dimensions, curves per file |
+| `AnnotationLayers` | list | Annotation layer per file, cycles (empty = `Annotations`) |
+| `AnnotationColors` | list | Annotation colour per file, cycles (empty = black) |
+| `LayerNames` | list | Solid/point layer per file, cycles, `Parent::Child` OK (empty = `Solid_Geometry`) |
+| `LayerColors` | list | Solid/point colour per file, cycles (empty = black) |
+
+| Output | Meaning |
+|---|---|
+| `ExportedFiles` | Paths of the files written by the last press |
+
+**Good to know**
+- Needs an export scheme called **`2018 Solid`** in Rhino's DWG/DXF export
+  options (create it once in the Export dialog). The name is the `SCHEME`
+  constant in the script if yours differs.
+- **Exports once per press** - the old version re-exported every file on every
+  recompute while `export` was True.
+- Temporary objects are **always** removed, even when a file fails; your
+  selection is restored.
+- Existing files are overwritten (deleted first, since Rhino's "replace?" prompt
+  would break the command). A file only counts as exported if it exists
+  afterwards - before, a failed export could still be reported as success.
+- Layers are made visible/unlocked (hidden/locked layers exported nothing);
+  nested layers and empty layer names now work.
+- Annotations of any type are baked (dimensions and hatches were skipped before);
+  objects are added with their layer/colour directly instead of edited afterwards.
+- Messages now show on the component (the old `Print` output was easy to miss);
+  open breps are counted in a warning per file.
+- Inputs/outputs renamed from `export, exportType, fileNames, outputFolder, breps,
+  points, annotations, annoLayers, annoColors, layerNames, layerColors` /
+  `outputFiles`.
 - Not compiled here (no Rhino) - test in Grasshopper.
