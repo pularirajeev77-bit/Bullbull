@@ -12,7 +12,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) | Bisect Frame |
 | [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) | CenterDiv, PVL, CrvClass, IntAng, IntAngDom, AdaptDiv, PolyPlus, VarChamfer |
 | [`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) | Calci, RemThruHole, PSize, CrtFold, DelFiles, ModFold, TimerCnt |
-| [`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) | CullDupPt, FarPts, ClosePts, SideSort, PtOnCrv, RadSort, WeightSort |
+| [`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) | CullDupPt, FarPts, ClosePts, SideSort, PtOnCrv, RadSort, WeightSort, UVSort |
 | [`surface`](https://github.com/pularirajeev77-bit/Bullbull/tree/surface) | EdgeAn, DraftThick, SrfExt |
 | [`Plane`](https://github.com/pularirajeev77-bit/Bullbull/tree/Plane) | CamPlane |
 | [`Layers`](https://github.com/pularirajeev77-bit/Bullbull/tree/Layers) | CurrLyr, LBS, CHL, DLM |
@@ -58,6 +58,7 @@ topic into branches — switch branch to see the code and full instructions.
 | PtOnCrv | `point` | Tests which points lie on curves, per branch |
 | RadSort | `point` | Sorts points counter-clockwise around a plane |
 | WeightSort | `point` | Sorts points by a weighted key of X, Y, Z |
+| UVSort | `point` | Sorts points row by row by their UV on a surface |
 | EdgeAn | `surface` | Sorts a Brep's edges: outer, inner, naked, interior, non-manifold |
 | DraftThick | `surface` | Thickens a surface/polysurface/closed brep along its normals with a draft angle |
 | SrfExt | `surface` | Extends surfaces by a distance on each side (N/E/S/W) |
