@@ -29,6 +29,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 |---|---|---|
 | [BlockAttExtract](#blockattextract) | `BlockAttExtract.cs` | Reads a title block's attribute text (key/value) from each layout |
 | [KeySearch](#keysearch) | `TitleBlockKeySearch.cs` | Flags which title-block keys contain any of the search keys |
+| [BlockAttEditor](#blockatteditor) | `BlockAttEditor.cs` | Writes attribute text (key/value) back onto the title block on each layout |
 
 ---
 
@@ -112,4 +113,57 @@ KeySearch runs once per layout and its outputs keep the same `{k}` branches.
 - Empty inputs give a warning on the component; the message shows `matches/keys`.
 - Renamed from SearchText: `Texts, Words` / `Result, Index, Msg` ->
   `Keys, SearchKeys` / `Matches, MatchIndex, Summary`.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## BlockAttEditor
+
+**File:** `BlockAttEditor.cs`
+
+The **write-back partner of BlockAttExtract**: sets attribute user text
+(key / value) on the title block of each named layout - update revision, date,
+drawing number and so on for a whole drawing set from Grasshopper.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Run` | item | True = write |
+| `BlockName` | item | Title-block definition name (not case-sensitive) |
+| `Keys` | list | Attribute keys to set |
+| `Values` | **tree** | Branch `{k}` = values for `LayoutNames[k]`, in `Keys` order |
+| `LayoutNames` | list | Layouts to edit (e.g. BlockAttExtract `FoundLayouts`) |
+
+| Output | Meaning |
+|---|---|
+| `Success` | True if the block was found on at least one layout |
+| `Summary` | What happened |
+| `ChangedCount` | Number of attribute values changed |
+
+**Typical wiring**
+
+```
+BlockAttExtract.FoundLayouts -> BlockAttEditor.LayoutNames
+Keys (e.g. REVISION, DATE)   -> BlockAttEditor.Keys
+Values tree {0},{1},...      -> BlockAttEditor.Values   (one branch per layout)
+```
+
+A **single** `Values` branch applies the same values to every layout (e.g. the
+same issue date on all sheets).
+
+**Good to know**
+- **Multi-layout fix:** `Values` is now tree access. Before it was list access,
+  so a flat list of values was read as *one* layout's values and the count check
+  failed for more than one layout (it only worked when Grasshopper happened to
+  iterate one layout at a time).
+- A **null** value leaves that key unchanged. Before, nulls were dropped, which
+  shifted every following value onto the wrong key. An empty text *does* set the
+  key to empty.
+- Only values that differ are written, so re-running changes nothing; each run is
+  **one Undo step**.
+- Every instance of the block on a layout is updated (locked/hidden too); only
+  block objects are scanned.
+- Warnings list missing layouts, layouts without the block, and key/value count
+  mismatches; the message shows `changed | layouts`.
+- Renamed outputs `OK, Msg, Changed` -> `Success, Summary, ChangedCount`;
+  `LayoutNames` is now a plain text list. Metadata and tooltips added.
 - Not compiled here (no Rhino) - test in Grasshopper.
