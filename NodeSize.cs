@@ -1,15 +1,15 @@
 /*
   Author: Rajeev Pulari + Gemini
   Rhino 8 | Grasshopper C#
-  Version: 2026.09.30
-  Component: Node Size Calculator v2.2
-  Description: Sizes a space-frame node from the two closest members meeting at it.
-               Angle between them -> node length -> rounded-up node radius.
+  Version: 2026.04.06
+  Component: SharedNodes v2.0
+  Description: Groups curves based on shared nodes/points with 6-decimal tolerance.
 */
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 using Rhino;
 using Rhino.Geometry;
@@ -21,139 +21,126 @@ using Grasshopper.Kernel.Types;
 
 public class Script_Instance : GH_ScriptInstance
 {
-    // Full-word names (were lines / unique_pts / thk / dia / round and angle / length / radius / refpoint)
-    // Use item access for Node, Thickness, Diameter, Rounding; list access for Curves.
     private void RunScript(
-        List<Curve> Curves,
-        Point3d Node,
-        double Thickness,
-        double Diameter,
-        double Rounding,
-        ref object Angle,
-        ref object Length,
-        ref object Radius,
-        ref object RefPoint)
+		List<Curve> curves,
+		List<Point3d> points,
+		ref object lines,
+		ref object lin_index,
+		ref object pts,
+		ref object pt_index,
+		ref object unique_pts)
     {
-        // Metadata + pin tooltips (once)
-        if (this.Component != null && this.Component.Name != "Node Size Calculator")
+        // --------------------------------------------------------------
+        // 0️⃣ Set Component Metadata (Rhino 8 Native)
+        // --------------------------------------------------------------
+        if (this.Component != null)
         {
-            this.Component.Name = "Node Size Calculator";
-            this.Component.NickName = "nodeSize";
-            this.Component.Message = "Node Sizes v2.2";
-            this.Component.Description = "Sizes a node from the smallest angle between the members meeting at it.";
-
-            var pi = this.Component.Params.Input;
-            SetTip(pi, "Curves", "Curves (members) touching this node - e.g. one branch of NodeCurves from sharedNodes. List access.");
-            SetTip(pi, "Node", "The node point. Item access.");
-            SetTip(pi, "Thickness", "Added wall thickness. Zero or less uses 10.");
-            SetTip(pi, "Diameter", "Member diameter to clear. Zero or less uses 12.");
-            SetTip(pi, "Rounding", "Radius is rounded UP to a multiple of this. Zero or less uses 1.");
-            var po = this.Component.Params.Output;
-            SetTip(po, "Angle", "Smallest angle between two members at the node, in degrees.");
-            SetTip(po, "Length", "Node length = Diameter / sin(Angle/2) + Thickness.");
-            SetTip(po, "Radius", "Length rounded up to a multiple of Rounding.");
-            SetTip(po, "RefPoint", "The node point (for placing labels / geometry).");
+            this.Component.Name = "Group Curves Shared Nodes";
+            this.Component.NickName = "sharedNodes";
+            this.Component.Message = "Shared Nodes v2.0";
         }
 
-        // 1. Defaults for unset / non-positive values
-        const double DEFAULT_DISTANCE = 30.0;   // internal probe distance (angle only, so value is irrelevant)
-        const double DEFAULT_THICKNESS = 10.0;
-        const double DEFAULT_DIAMETER = 12.0;
-        const double DEFAULT_ROUNDING = 1.0;
+        // 1. Initialize Outputs as DataTrees
+        DataTree<Curve> treeLines = new DataTree<Curve>();
+        DataTree<int> treeLinIndex = new DataTree<int>();
+        DataTree<Point3d> treePts = new DataTree<Point3d>();
+        DataTree<int> treePtIndex = new DataTree<int>();
+        DataTree<Point3d> treeUniquePts = new DataTree<Point3d>();
 
-        double thk = (Thickness <= 0) ? DEFAULT_THICKNESS : Thickness;
-        double dia = (Diameter <= 0) ? DEFAULT_DIAMETER : Diameter;
-        double rnd = (Rounding <= 0) ? DEFAULT_ROUNDING : Rounding;
-
-        if (!Node.IsValid)
+        // 2. Setup Point Mapping (Tolerance-based key using a Tuple)
+        var point_map = new Dictionary<Tuple<double, double, double>, int>();
+        if (points != null)
         {
-            this.Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Node point is invalid.");
-            return;
-        }
-        if (Curves == null || Curves.Count == 0)
-        {
-            this.Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No curves at this node.");
-            return;
-        }
-
-        RefPoint = Node;
-
-        // 2. Probe point on each member, at a fixed distance from the node
-        List<Point3d> probes = new List<Point3d>();
-        foreach (Curve crv in Curves)
-        {
-            if (crv == null) continue;
-
-            Point3d mid = crv.PointAtNormalizedLength(0.5);
-            Vector3d vec = mid - Node;
-            if (vec.IsZero) continue;
-
-            vec.Unitize();
-            vec *= DEFAULT_DISTANCE;
-            probes.Add(Node + vec);
-        }
-
-        if (probes.Count < 2)
-        {
-            this.Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark,
-                "Fewer than two usable members at this node - no angle to size.");
-            return;
-        }
-
-        // 3. Closest pair of probes = smallest angle between members
-        double minDist = double.MaxValue;
-        Point3d pointA = Point3d.Unset;
-        Point3d pointB = Point3d.Unset;
-        for (int i = 0; i < probes.Count; i++)
-        {
-            for (int j = i + 1; j < probes.Count; j++)
+            for (int i = 0; i < points.Count; i++)
             {
-                double d = probes[i].DistanceTo(probes[j]);
-                if (d < minDist)
+                var key = PointKey(points[i]);
+                if (!point_map.ContainsKey(key))
                 {
-                    minDist = d;
-                    pointA = probes[i];
-                    pointB = probes[j];
+                    point_map[key] = i;
                 }
             }
         }
 
-        // 4. Geometry
-        Vector3d v1 = pointA - Node;
-        Vector3d v2 = pointB - Node;
-        v1.Unitize();
-        v2.Unitize();
+        // 3. Prepare list of lists for processing
+        int count = points != null ? points.Count : 0;
+        if (count == 0) return;
 
-        double dot = Math.Max(-1.0, Math.Min(1.0, v1 * v2));
-        double angleRad = Math.Acos(dot);
+        List<Curve>[] groupedLines = new List<Curve>[count];
+        List<int>[] groupedIndex = new List<int>[count];
+        List<Point3d>[] groupedPts = new List<Point3d>[count];
+        List<int>[] groupedPtIndex = new List<int>[count];
 
-        double sinHalf = Math.Sin(angleRad * 0.5);
-        if (Math.Abs(sinHalf) <= 1e-9)
+        for (int i = 0; i < count; i++)
         {
-            this.Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
-                "Two members overlap (angle ~0): node length is undefined.");
-            return;
+            groupedLines[i] = new List<Curve>();
+            groupedIndex[i] = new List<int>();
+            groupedPts[i] = new List<Point3d>();
+            groupedPtIndex[i] = new List<int>();
         }
 
-        double length = (dia / sinHalf) + thk;
-        Angle = RhinoMath.ToDegrees(angleRad);
-        Length = length;
-        Radius = Math.Ceiling(length / rnd) * rnd;
+        // 4. Process Curves
+        if (curves != null)
+        {
+            for (int i = 0; i < curves.Count; i++)
+            {
+                Curve crv = curves[i];
+                if (crv == null) continue;
+
+                Point3d[] ends = new Point3d[] { crv.PointAtStart, crv.PointAtEnd };
+
+                foreach (Point3d pt in ends)
+                {
+                    var key = PointKey(pt);
+                    if (point_map.ContainsKey(key))
+                    {
+                        int idx = point_map[key];
+                        groupedLines[idx].Add(crv);
+                        groupedIndex[idx].Add(i);
+                        groupedPts[idx].Add(pt);
+                        groupedPtIndex[idx].Add(idx);
+                    }
+                }
+            }
+        }
+
+        // 5. Build Trees and Handle Unique Points per branch
+        for (int i = 0; i < count; i++)
+        {
+            GH_Path path = new GH_Path(i);
+            
+            treeLines.AddRange(groupedLines[i], path);
+            treeLinIndex.AddRange(groupedIndex[i], path);
+            treePts.AddRange(groupedPts[i], path);
+            treePtIndex.AddRange(groupedPtIndex[i], path);
+
+            // Per-branch de-duplication logic
+            HashSet<Tuple<double, double, double>> seenInBranch = new HashSet<Tuple<double, double, double>>();
+            foreach (Point3d pt in groupedPts[i])
+            {
+                var k = PointKey(pt);
+                if (!seenInBranch.Contains(k))
+                {
+                    seenInBranch.Add(k);
+                    treeUniquePts.Add(pt, path);
+                }
+            }
+        }
+
+        // 6. Assign to Outputs
+        lines = treeLines;
+        lin_index = treeLinIndex;
+        pts = treePts;
+        pt_index = treePtIndex;
+        unique_pts = treeUniquePts;
     }
 
-    // Find the pin by its variable name (not by index): Rhino's script component can
-    // have an extra "out" pin at output index 0, which shifted every name by one.
-    private void SetTip(IList<IGH_Param> ps, string name, string tip)
+    // Helper method for point key (Rounding to 6 decimals)
+    private Tuple<double, double, double> PointKey(Point3d pt)
     {
-        if (ps == null) return;
-        IGH_Param hit = null;
-        foreach (IGH_Param p in ps)
-            if (string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
-        if (hit == null)
-            foreach (IGH_Param p in ps)
-                if (string.Equals(p.NickName, name, StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
-        if (hit == null) return;
-        hit.NickName = name;
-        hit.Description = tip;
+        return new Tuple<double, double, double>(
+            Math.Round(pt.X, 6),
+            Math.Round(pt.Y, 6),
+            Math.Round(pt.Z, 6)
+            );
     }
 }
