@@ -20,6 +20,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`SpaceFrame`](https://github.com/pularirajeev77-bit/Bullbull/tree/SpaceFrame) | sharedNodes, nodeSize, HardLook |
 | [`Creation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Creation) | Bake, CadExport, SolidExport, CNCExport |
 | [`Tree`](https://github.com/pularirajeev77-bit/Bullbull/tree/Tree) | CreateTree, TreeSwap, TreeSwap+ |
+| [`TitleBlock`](https://github.com/pularirajeev77-bit/Bullbull/tree/TitleBlock) | BlockAttExtract |
 
 ## All components
 
@@ -78,6 +79,7 @@ topic into branches — switch branch to see the code and full instructions.
 | CreateTree | `Tree` | Sorts a flat list into branches by index (like Elefront Create Tree) |
 | TreeSwap | `Tree` | Swaps the first two path indices ({A;B} -> {B;A}) |
 | TreeSwap+ | `Tree` | Swaps indices for 2+ names, prefixes {0} for 1 name |
+| BlockAttExtract | `TitleBlock` | Reads a title block's attribute text (key/value) from each layout |
 
 ## How to use a script
 
