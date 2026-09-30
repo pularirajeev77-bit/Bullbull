@@ -63,11 +63,13 @@ public class Script_Instance : GH_ScriptInstance
             return;
         }
 
-        DataTree<Curve> treeCurves = new DataTree<Curve>();
-        DataTree<int> treeCurveIdx = new DataTree<int>();
-        DataTree<Point3d> treePts = new DataTree<Point3d>();
-        DataTree<int> treePtIdx = new DataTree<int>();
-        DataTree<Point3d> treeUnique = new DataTree<Point3d>();
+        // GH_Structure with explicit GH types: the classic, reliable way to return trees
+        // (a DataTree<Curve> can arrive empty because Curve is an abstract type)
+        var treeCurves = new GH_Structure<GH_Curve>();
+        var treeCurveIdx = new GH_Structure<GH_Integer>();
+        var treePts = new GH_Structure<GH_Point>();
+        var treePtIdx = new GH_Structure<GH_Integer>();
+        var treeUnique = new GH_Structure<GH_Point>();
 
         // Tolerance: input, else model tolerance, else 0.001
         double tol = Tolerance;
@@ -128,6 +130,8 @@ public class Script_Instance : GH_ScriptInstance
             }
         }
 
+        int matchedNodes = 0;
+        int matchedEnds = 0;
         for (int i = 0; i < count; i++)
         {
             GH_Path path = new GH_Path(i);
@@ -137,14 +141,29 @@ public class Script_Instance : GH_ScriptInstance
             treePtIdx.EnsurePath(path);
             treeUnique.EnsurePath(path);
 
-            treeCurves.AddRange(groupedCurves[i], path);
-            treeCurveIdx.AddRange(groupedIndex[i], path);
-            treePts.AddRange(groupedPts[i], path);
-            for (int k = 0; k < groupedPts[i].Count; k++) treePtIdx.Add(i, path);
+            for (int k = 0; k < groupedCurves[i].Count; k++)
+            {
+                treeCurves.Append(new GH_Curve(groupedCurves[i][k].DuplicateCurve()), path);
+                treeCurveIdx.Append(new GH_Integer(groupedIndex[i][k]), path);
+                treePts.Append(new GH_Point(groupedPts[i][k]), path);
+                treePtIdx.Append(new GH_Integer(i), path);
+            }
+            matchedEnds += groupedCurves[i].Count;
 
             // every point in a branch is the same node -> one unique point
-            if (groupedPts[i].Count > 0) treeUnique.Add(groupedPts[i][0], path);
+            if (groupedPts[i].Count > 0)
+            {
+                treeUnique.Append(new GH_Point(Points[i]), path);
+                matchedNodes++;
+            }
         }
+
+        if (matchedEnds == 0)
+            this.Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                "No curve end is within " + tol.ToString("0.######") + " of any point. Check that Points are the curve end points, or raise Tolerance.");
+        else
+            this.Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark,
+                matchedNodes + " of " + count + " nodes have curves; " + matchedEnds + " curve ends matched (of " + (Curves.Count * 2) + ").");
 
         NodeCurves = treeCurves;
         CurveIndices = treeCurveIdx;

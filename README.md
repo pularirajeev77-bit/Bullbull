@@ -59,6 +59,7 @@ output is a tree with **one branch per node**, so branch `{i}` belongs to
 - A closed curve (start = end) is counted once at its node (before it was listed twice).
 - Empty/missing inputs now give a warning instead of silently returning nothing.
 - The tolerance actually used is shown under the component (`tol 0.001`). Leave `Tolerance` empty or 0 to use the Rhino model tolerance; any value above 0 overrides it.
+- Outputs are returned as typed Grasshopper trees (curve / point / integer), so `NodeCurves` can no longer arrive empty. A remark under the component reports how many nodes and curve ends matched; if none match you get a warning that suggests raising `Tolerance`. `UniqueNodes` now returns the node point itself.
 - Matching is a true distance test within `Tolerance` (spatial grid, fast on big frames) instead of 6-decimal rounding, so ends with tiny float differences are no longer missed. If two nodes are both in range, the closest wins.
 - Inputs/outputs were renamed from `curves, points, lines, lin_index, pts, pt_index, unique_pts`.
 - Not compiled here (no Rhino) - test in Grasshopper.
