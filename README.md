@@ -28,6 +28,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [Bake](#bake) | `BakePro.cs` | Bakes geometry with name, layer, colour, print width, isocurves and grouping |
 | [CadExport](#cadexport) | `CadExport.cs` | Exports points, curves and text to a DWG/DXF file on one layer |
 | [SolidExport](#solidexport) | `SolidExport.cs` | Exports one DWG/DXF per branch with breps as ACIS solids ("2018 Solid" scheme) |
+| [CNCExport](#cncexport) | `CNCExport.cs` | Exports one DWG/DXF per panel with per-layer colours and linetypes |
 
 ---
 
@@ -170,4 +171,58 @@ again.
 - Inputs/outputs renamed from `export, exportType, fileNames, outputFolder, breps,
   points, annotations, annoLayers, annoColors, layerNames, layerColors` /
   `outputFiles`.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## CNCExport
+
+**File:** `CNCExport.cs`
+
+Exports **one DWG/DXF file per panel** for CNC / cutting, with each group of
+curves on its own layer, colour and **linetype** (e.g. cut = Continuous,
+engrave = Dashed). Objects are baked only for the export and removed again.
+
+**Tree layout**
+- `FileNames` - one branch per panel: `{0}, {1}, {2} ...` (first item = file name).
+- `Curves`, `Points`, `Annotations` - `{panel; k}`: sub-branch `k` of a panel
+  goes on `LayerNames[k]` with `LayerColors[k]` and `Linetypes[k]`.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Export` | item | Exports once each time it goes False -> True (use a **Button**) |
+| `FileType` | item | `DWG` or `DXF` (empty = DWG) |
+| `FileNames` | tree | One name per panel branch (no extension) |
+| `Folder` | item | Existing folder to save into |
+| `Curves` | tree | Curves as `{panel; k}` |
+| `Points` | tree | Points as `{panel; k}` |
+| `Annotations` | tree | Text, leaders, dimensions, curves as `{panel; k}` |
+| `AnnotationLayers` | list | Annotation layer per sub-branch, cycles (empty = `Annotations`) |
+| `AnnotationColors` | list | Annotation colour per sub-branch, cycles (empty = black) |
+| `LayerNames` | list | Layer per sub-branch, cycles, `Parent::Child` OK (empty = `Layer_k`) |
+| `LayerColors` | list | Colour per sub-branch, cycles (empty = black) |
+| `Linetypes` | list | Linetype per sub-branch, cycles (`Continuous`, `Dashed`, `Hidden`, `Center`...) |
+
+| Output | Meaning |
+|---|---|
+| `ExportedFiles` | Paths of the files written by the last press |
+
+**Good to know**
+- **Exports once per press** - the old version re-exported every panel on every
+  recompute while `export` was True.
+- A file is only listed if it really exists afterwards (before, every panel was
+  reported as exported even when the command failed).
+- The panel number is the first index of each `FileNames` path, so culled or
+  re-ordered name branches still pick up the right `{panel; k}` geometry.
+- `Continuous` is Rhino's built-in default linetype; the old lookup of a
+  "Continuous" linetype usually failed and left an invalid index. Unknown
+  linetype names now fall back to the layer's linetype with one warning each.
+- Temporary objects are always removed (even on error); the folder and file type
+  are checked; a missing `Curves` input no longer crashes; layers are made
+  visible/unlocked and nested layers work; existing files are overwritten.
+- Annotations accept any Rhino annotation type (hatches, all dimension types).
+- Inputs/outputs renamed from `export, exportType, fileNames, outputFolder,
+  curves, points, annotations, annoLayers, annoColors, layerNames, layerColors,
+  lineTypes` / `outputFiles`.
+- Uses Rhino's current DWG/DXF export scheme.
 - Not compiled here (no Rhino) - test in Grasshopper.
