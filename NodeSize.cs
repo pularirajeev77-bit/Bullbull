@@ -43,16 +43,16 @@ public class Script_Instance : GH_ScriptInstance
             this.Component.Description = "Sizes a node from the smallest angle between the members meeting at it.";
 
             var pi = this.Component.Params.Input;
-            SetTip(pi, 0, "Curves", "Curves (members) touching this node - e.g. one branch of NodeCurves from sharedNodes. List access.");
-            SetTip(pi, 1, "Node", "The node point. Item access.");
-            SetTip(pi, 2, "Thickness", "Added wall thickness. Zero or less uses 10.");
-            SetTip(pi, 3, "Diameter", "Member diameter to clear. Zero or less uses 12.");
-            SetTip(pi, 4, "Rounding", "Radius is rounded UP to a multiple of this. Zero or less uses 1.");
+            SetTip(pi, "Curves", "Curves (members) touching this node - e.g. one branch of NodeCurves from sharedNodes. List access.");
+            SetTip(pi, "Node", "The node point. Item access.");
+            SetTip(pi, "Thickness", "Added wall thickness. Zero or less uses 10.");
+            SetTip(pi, "Diameter", "Member diameter to clear. Zero or less uses 12.");
+            SetTip(pi, "Rounding", "Radius is rounded UP to a multiple of this. Zero or less uses 1.");
             var po = this.Component.Params.Output;
-            SetTip(po, 0, "Angle", "Smallest angle between two members at the node, in degrees.");
-            SetTip(po, 1, "Length", "Node length = Diameter / sin(Angle/2) + Thickness.");
-            SetTip(po, 2, "Radius", "Length rounded up to a multiple of Rounding.");
-            SetTip(po, 3, "RefPoint", "The node point (for placing labels / geometry).");
+            SetTip(po, "Angle", "Smallest angle between two members at the node, in degrees.");
+            SetTip(po, "Length", "Node length = Diameter / sin(Angle/2) + Thickness.");
+            SetTip(po, "Radius", "Length rounded up to a multiple of Rounding.");
+            SetTip(po, "RefPoint", "The node point (for placing labels / geometry).");
         }
 
         // 1. Defaults for unset / non-positive values
@@ -141,10 +141,19 @@ public class Script_Instance : GH_ScriptInstance
         Radius = Math.Ceiling(length / rnd) * rnd;
     }
 
-    private void SetTip(IList<IGH_Param> ps, int i, string name, string tip)
+    // Find the pin by its variable name (not by index): Rhino's script component can
+    // have an extra "out" pin at output index 0, which shifted every name by one.
+    private void SetTip(IList<IGH_Param> ps, string name, string tip)
     {
-        if (ps == null || i < 0 || i >= ps.Count) return;
-        ps[i].NickName = name;
-        ps[i].Description = tip;
+        if (ps == null) return;
+        IGH_Param hit = null;
+        foreach (IGH_Param p in ps)
+            if (string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+        if (hit == null)
+            foreach (IGH_Param p in ps)
+                if (string.Equals(p.NickName, name, StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+        if (hit == null) return;
+        hit.NickName = name;
+        hit.Description = tip;
     }
 }

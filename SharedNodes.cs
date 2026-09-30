@@ -2,7 +2,7 @@
   Author: Rajeev Pulari + Gemini
   Rhino 8 | Grasshopper C#
   Version: 2026.09.30
-  Component: Shared Nodes v2.2
+  Component: Shared Nodes v2.3
   Description: For every node (point), collects the curves whose start or end
                touches it (within Tolerance). One tree branch per node, aligned
                with the Points input list.
@@ -39,17 +39,17 @@ public class Script_Instance : GH_ScriptInstance
         {
             this.Component.Name = "Group Curves Shared Nodes";
             this.Component.NickName = "sharedNodes";
-            this.Component.Message = "Shared Nodes v2.2";
+            this.Component.Message = "Shared Nodes v2.3";
             this.Component.Description = "Groups curves by the nodes (points) they start or end at. One tree branch per node.";
 
-            SetTip(this.Component.Params.Input, 0, "Curves", "Curves (e.g. frame members) to group by their end points.");
-            SetTip(this.Component.Params.Input, 1, "Points", "Nodes to test. Branch i of every output belongs to Points[i].");
-            SetTip(this.Component.Params.Input, 2, "Tolerance", "A curve end within this distance of a node counts as touching it. Zero or less uses the model tolerance. Item access.");
-            SetTip(this.Component.Params.Output, 0, "NodeCurves", "Curves touching each node (one branch per node).");
-            SetTip(this.Component.Params.Output, 1, "CurveIndices", "Index in Curves of each curve found at the node.");
-            SetTip(this.Component.Params.Output, 2, "NodePoints", "The node point repeated once per touching curve.");
-            SetTip(this.Component.Params.Output, 3, "NodeIndices", "Index in Points of the node, repeated once per touching curve.");
-            SetTip(this.Component.Params.Output, 4, "UniqueNodes", "One point per node that has at least one curve.");
+            SetTip(this.Component.Params.Input, "Curves", "Curves (e.g. frame members) to group by their end points.");
+            SetTip(this.Component.Params.Input, "Points", "Nodes to test. Branch i of every output belongs to Points[i].");
+            SetTip(this.Component.Params.Input, "Tolerance", "A curve end within this distance of a node counts as touching it. Zero or less uses the model tolerance. Item access.");
+            SetTip(this.Component.Params.Output, "NodeCurves", "Curves touching each node (one branch per node).");
+            SetTip(this.Component.Params.Output, "CurveIndices", "Index in Curves of each curve found at the node.");
+            SetTip(this.Component.Params.Output, "NodePoints", "The node point repeated once per touching curve.");
+            SetTip(this.Component.Params.Output, "NodeIndices", "Index in Points of the node, repeated once per touching curve.");
+            SetTip(this.Component.Params.Output, "UniqueNodes", "One point per node that has at least one curve.");
         }
 
         if (Points == null || Points.Count == 0)
@@ -77,7 +77,7 @@ public class Script_Instance : GH_ScriptInstance
             tol = (RhinoDoc.ActiveDoc != null) ? RhinoDoc.ActiveDoc.ModelAbsoluteTolerance : 0.001;
         if (tol <= 0) tol = 0.001;
         if (this.Component != null)
-            this.Component.Message = "Shared Nodes v2.2 | tol " + tol.ToString("0.######");
+            this.Component.Message = "Shared Nodes v2.3 | tol " + tol.ToString("0.######");
 
         // Spatial hash: cell size = tol, so a match is always in the 3x3x3 neighbouring cells
         var grid = new Dictionary<Tuple<long, long, long>, List<int>>();
@@ -206,10 +206,19 @@ public class Script_Instance : GH_ScriptInstance
         return best;
     }
 
-    private void SetTip(IList<IGH_Param> ps, int i, string name, string tip)
+    // Find the pin by its variable name (not by index): Rhino's script component can
+    // have an extra "out" pin at output index 0, which shifted every name by one.
+    private void SetTip(IList<IGH_Param> ps, string name, string tip)
     {
-        if (ps == null || i < 0 || i >= ps.Count) return;
-        ps[i].NickName = name;
-        ps[i].Description = tip;
+        if (ps == null) return;
+        IGH_Param hit = null;
+        foreach (IGH_Param p in ps)
+            if (string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+        if (hit == null)
+            foreach (IGH_Param p in ps)
+                if (string.Equals(p.NickName, name, StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+        if (hit == null) return;
+        hit.NickName = name;
+        hit.Description = tip;
     }
 }
