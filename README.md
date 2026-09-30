@@ -26,6 +26,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | Component | File | What it does |
 |---|---|---|
 | [Bake](#bake) | `BakePro.cs` | Bakes geometry with name, layer, colour, print width, isocurves and grouping |
+| [CadExport](#cadexport) | `CadExport.cs` | Exports points, curves and text to a DWG/DXF file on one layer |
 
 ---
 
@@ -66,4 +67,54 @@ and a list gives one value per object.
   skipped with a warning.
 - Inputs/outputs renamed from `objs, names, layers, colors, pWidths, wiresEach,
   activate, groupListTgthr` / `resultID`.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## CadExport
+
+**File:** `CadExport.cs`
+
+Writes points, curves and text straight from Grasshopper to a **DWG or DXF**
+file, all on one layer. The objects are baked only for a moment, exported, then
+deleted again - nothing is left in your Rhino model.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Export` | item | Exports once each time it goes False -> True (use a **Button**) |
+| `FileType` | item | `DWG` or `DXF` |
+| `Folder` | item | Existing folder to save into |
+| `FileName` | item | File name without extension (existing file is overwritten) |
+| `LayerName` | item | Layer for the objects, nested `Parent::Child` OK (empty = `CadExport`) |
+| `LayerColor` | item | Layer colour (empty = black) |
+| `Points` | list | Points to export |
+| `Curves` | list | Curves, lines, polylines, arcs, circles... |
+| `TextPoints` | list | Insertion point of each text (text is centred on it) |
+| `Texts` | list | Text strings, paired with `TextPoints` by index |
+| `TextSize` | item | Text height (0 or less = no text) |
+
+| Output | Meaning |
+|---|---|
+| `Result` | Status of the last export |
+
+**Good to know**
+- **Exports once per press.** The old version re-exported (bake + export +
+  delete) on every recompute while `export` was True.
+- Temporary objects are **always** deleted, even if the export fails (before, an
+  error left them in the model), and your previous selection is restored.
+- An existing file is deleted first - Rhino's "replace?" prompt would otherwise
+  break the scripted export. Success is confirmed by checking the file exists.
+- The layer is made visible and unlocked so its objects can be selected for
+  export (a hidden/locked layer exported nothing).
+- Accepts wrapped Grasshopper data: lines, polylines, arcs etc. now export as
+  curves (the old `is Curve` check skipped them); unconvertible items are counted
+  in a warning. Colour accepts colour, text (`255,0,0`) or names.
+- Text uses Rhino 8's `TextEntity.Create` with centre/middle alignment (the old
+  `Justification` property is obsolete). Mismatched `Texts` / `TextPoints` counts
+  give a warning.
+- Empty `LayerName` or `FileName` no longer crashes; `.dwg`/`.dxf` typed into
+  `FileName` is stripped.
+- Inputs/outputs renamed from `export, exportType, filePath, fileName,
+  layerName, layerColor, points, curves, textLocs, texts, textSize` / `result`.
+- Export options use Rhino's current DWG/DXF export scheme.
 - Not compiled here (no Rhino) - test in Grasshopper.
