@@ -2,14 +2,13 @@
   Author: Rajeev Pulari + Gemini
   Rhino 8 | Grasshopper C#
   Version: 2026.04.06
-  Component: SharedNodes v2.0
-  Description: Groups curves based on shared nodes/points with 6-decimal tolerance.
+  Component: NodeSize v1.0
+  Description: Defines node sizes based on curve midpoints and proximity vectors.
 */
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 using Rhino;
 using Rhino.Geometry;
@@ -22,125 +21,117 @@ using Grasshopper.Kernel.Types;
 public class Script_Instance : GH_ScriptInstance
 {
     private void RunScript(
-		List<Curve> curves,
-		List<Point3d> points,
-		ref object lines,
-		ref object lin_index,
-		ref object pts,
-		ref object pt_index,
-		ref object unique_pts)
+		List<Curve> lines,
+		Point3d unique_pts,
+		double thk,
+		double dia,
+		double round,
+		ref object angle,
+		ref object length,
+		ref object radius,
+		ref object refpoint)
     {
         // --------------------------------------------------------------
-        // 0️⃣ Set Component Metadata (Rhino 8 Native)
+        // 0️⃣ Set Component Metadata
         // --------------------------------------------------------------
         if (this.Component != null)
         {
-            this.Component.Name = "Group Curves Shared Nodes";
-            this.Component.NickName = "sharedNodes";
-            this.Component.Message = "Shared Nodes v2.0";
+            this.Component.Name     = "Node Size Calculator";
+            this.Component.NickName = "nodeSize";
+            this.Component.Message  = "Node Sizes v2.1";
         }
 
-        // 1. Initialize Outputs as DataTrees
-        DataTree<Curve> treeLines = new DataTree<Curve>();
-        DataTree<int> treeLinIndex = new DataTree<int>();
-        DataTree<Point3d> treePts = new DataTree<Point3d>();
-        DataTree<int> treePtIndex = new DataTree<int>();
-        DataTree<Point3d> treeUniquePts = new DataTree<Point3d>();
+        // --------------------------------------------------------------
+        // 1️⃣ Apply Default Values if inputs are unset / zero
+        // --------------------------------------------------------------
+        const double DEFAULT_DISTANCE = 30.0;
+        const double DEFAULT_THK      = 10.0;
+        const double DEFAULT_DIA      = 12.0;
+        const double DEFAULT_ROUND    = 1.0;
 
-        // 2. Setup Point Mapping (Tolerance-based key using a Tuple)
-        var point_map = new Dictionary<Tuple<double, double, double>, int>();
-        if (points != null)
+        double _distance = DEFAULT_DISTANCE;          // ← internal only, no longer exposed
+        double _thk      = (thk   <= 0) ? DEFAULT_THK   : thk;
+        double _dia      = (dia   <= 0) ? DEFAULT_DIA   : dia;
+        double _round    = (round <= 0) ? DEFAULT_ROUND : round;
+
+        // --------------------------------------------------------------
+        // 2️⃣ Initialize internal variables
+        // --------------------------------------------------------------
+        Point3d out_pointA   = Point3d.Unset;
+        Point3d out_pointB   = Point3d.Unset;
+        double  out_angle    = 0.0;
+        double  out_length   = 0.0;
+        double  out_radius   = 0.0;
+        double  out_min_dist = double.MaxValue;
+
+        if (!unique_pts.IsValid || lines == null || lines.Count == 0) return;
+
+        // --------------------------------------------------------------
+        // 3️⃣ Reference Point Output
+        // --------------------------------------------------------------
+        refpoint = unique_pts;
+
+        // --------------------------------------------------------------
+        // 4️⃣ Process Curves relative to the Center Point (internal)
+        // --------------------------------------------------------------
+        List<Point3d> ptsList = new List<Point3d>();
+        foreach (Curve crv in lines)
         {
-            for (int i = 0; i < points.Count; i++)
+            if (crv == null) continue;
+
+            Point3d  mid = crv.PointAtNormalizedLength(0.5);
+            Vector3d vec = mid - unique_pts;
+            if (vec.IsZero) continue;
+
+            vec.Unitize();
+            vec *= _distance;
+            ptsList.Add(unique_pts + vec);
+        }
+
+        // --------------------------------------------------------------
+        // 5️⃣ Find Closest Pair (internal)
+        // --------------------------------------------------------------
+        if (ptsList.Count >= 2)
+        {
+            for (int i = 0; i < ptsList.Count; i++)
             {
-                var key = PointKey(points[i]);
-                if (!point_map.ContainsKey(key))
+                for (int j = i + 1; j < ptsList.Count; j++)
                 {
-                    point_map[key] = i;
-                }
-            }
-        }
-
-        // 3. Prepare list of lists for processing
-        int count = points != null ? points.Count : 0;
-        if (count == 0) return;
-
-        List<Curve>[] groupedLines = new List<Curve>[count];
-        List<int>[] groupedIndex = new List<int>[count];
-        List<Point3d>[] groupedPts = new List<Point3d>[count];
-        List<int>[] groupedPtIndex = new List<int>[count];
-
-        for (int i = 0; i < count; i++)
-        {
-            groupedLines[i] = new List<Curve>();
-            groupedIndex[i] = new List<int>();
-            groupedPts[i] = new List<Point3d>();
-            groupedPtIndex[i] = new List<int>();
-        }
-
-        // 4. Process Curves
-        if (curves != null)
-        {
-            for (int i = 0; i < curves.Count; i++)
-            {
-                Curve crv = curves[i];
-                if (crv == null) continue;
-
-                Point3d[] ends = new Point3d[] { crv.PointAtStart, crv.PointAtEnd };
-
-                foreach (Point3d pt in ends)
-                {
-                    var key = PointKey(pt);
-                    if (point_map.ContainsKey(key))
+                    double d = ptsList[i].DistanceTo(ptsList[j]);
+                    if (d < out_min_dist)
                     {
-                        int idx = point_map[key];
-                        groupedLines[idx].Add(crv);
-                        groupedIndex[idx].Add(i);
-                        groupedPts[idx].Add(pt);
-                        groupedPtIndex[idx].Add(idx);
+                        out_min_dist = d;
+                        out_pointA   = ptsList[i];
+                        out_pointB   = ptsList[j];
                     }
                 }
             }
         }
 
-        // 5. Build Trees and Handle Unique Points per branch
-        for (int i = 0; i < count; i++)
+        // --------------------------------------------------------------
+        // 6️⃣ Compute Geometry
+        // --------------------------------------------------------------
+        if (out_pointA.IsValid && out_pointB.IsValid)
         {
-            GH_Path path = new GH_Path(i);
-            
-            treeLines.AddRange(groupedLines[i], path);
-            treeLinIndex.AddRange(groupedIndex[i], path);
-            treePts.AddRange(groupedPts[i], path);
-            treePtIndex.AddRange(groupedPtIndex[i], path);
+            Vector3d v1 = out_pointA - unique_pts;
+            Vector3d v2 = out_pointB - unique_pts;
+            v1.Unitize();
+            v2.Unitize();
 
-            // Per-branch de-duplication logic
-            HashSet<Tuple<double, double, double>> seenInBranch = new HashSet<Tuple<double, double, double>>();
-            foreach (Point3d pt in groupedPts[i])
+            double dot     = Math.Max(-1.0, Math.Min(1.0, v1 * v2));
+            double rad_val = Math.Acos(dot);
+            out_angle      = RhinoMath.ToDegrees(rad_val);
+
+            double sinHalf = Math.Sin(rad_val * 0.5);
+            if (Math.Abs(sinHalf) > 1e-9)
             {
-                var k = PointKey(pt);
-                if (!seenInBranch.Contains(k))
-                {
-                    seenInBranch.Add(k);
-                    treeUniquePts.Add(pt, path);
-                }
+                out_length = (_dia / sinHalf) + _thk;
+                out_radius = Math.Ceiling(out_length / _round) * _round;
             }
+
+            angle  = out_angle;
+            length = out_length;
+            radius = out_radius;
         }
-
-        // 6. Assign to Outputs
-        lines = treeLines;
-        lin_index = treeLinIndex;
-        pts = treePts;
-        pt_index = treePtIndex;
-        unique_pts = treeUniquePts;
-    }
-
-    // Helper method for point key (Rounding to 6 decimals)
-    private Tuple<double, double, double> PointKey(Point3d pt)
-    {
-        return new Tuple<double, double, double>(
-            Math.Round(pt.X, 6),
-            Math.Round(pt.Y, 6),
-            Math.Round(pt.Z, 6)
-            );
     }
 }
