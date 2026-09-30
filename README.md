@@ -17,7 +17,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`Plane`](https://github.com/pularirajeev77-bit/Bullbull/tree/Plane) | CamPlane |
 | [`Layers`](https://github.com/pularirajeev77-bit/Bullbull/tree/Layers) | CurrLyr, LBS, CHL, DLM |
 | [`display`](https://github.com/pularirajeev77-bit/Bullbull/tree/display) | Zebra, GoldEmap, CrvProp |
-| [`SpaceFrame`](https://github.com/pularirajeev77-bit/Bullbull/tree/SpaceFrame) | sharedNodes, nodeSize |
+| [`SpaceFrame`](https://github.com/pularirajeev77-bit/Bullbull/tree/SpaceFrame) | sharedNodes, nodeSize, HardLook |
 
 ## All components
 
@@ -67,6 +67,7 @@ topic into branches — switch branch to see the code and full instructions.
 | CrvProp | `display` | Reports a curve's length, domain, type and more |
 | sharedNodes | `SpaceFrame` | Groups curves by the nodes (points) they start or end at |
 | nodeSize | `SpaceFrame` | Sizes a node from the smallest angle between its members |
+| HardLook | `SpaceFrame` | Looks up bolt/sleeve/cone/thread sizes for a pipe diameter from Excel |
 
 ## How to use a script
 
