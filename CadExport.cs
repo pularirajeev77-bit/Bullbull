@@ -173,7 +173,7 @@ public class Script_Instance : GH_ScriptInstance
             // Rhino asks "replace?" for an existing file, which would break the scripted command
             if (File.Exists(fullPath)) File.Delete(fullPath);
 
-            string cmd = "-_Export \"" + fullPath + "\" _Enter _Enter";
+            string cmd = "-_Export \"" + fullPath + "\" _Enter";
             bool ran = RhinoApp.RunScript(cmd, false);
 
             if (ran && File.Exists(fullPath))
