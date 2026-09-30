@@ -65,6 +65,7 @@ Branch `{k}` of `Keys` and `Values` belongs to `FoundLayouts[k]`.
 - Warnings list the layouts that don't exist and the layouts without the block
   (they get an empty branch). If a layout has the block more than once, the first
   is read and a remark says so.
-- Renamed output `LNames` -> `FoundLayouts`; added metadata and tooltips (the
-  script had none).
+- Renamed output `LNames` -> `FoundLayouts`. Added metadata: a header block
+  listing every input/output, component Name / NickName / Description, tooltips on
+  every pin, and a Message that shows how many layouts were found (e.g. `3/4 layouts`).
 - Not compiled here (no Rhino) - test in Grasshopper.

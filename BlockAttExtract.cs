@@ -1,12 +1,26 @@
+#region Metadata
 /*
-  Author: Rajeev Pulari + ChatGPT
-  Rhino 8 | Grasshopper C#
-  Version: 2026.09.30
-  Component: BlockAttExtract v2.1
-  Description: Reads the attribute user text (key / value pairs) of a title-block
-               instance placed on each named layout (page view).
-               Branch {k} of Keys / Values belongs to FoundLayouts[k].
+  Author      : Rajeev Pulari + ChatGPT
+  Platform    : Rhino 8 | Grasshopper C#
+  Version     : 2026.09.30
+  Component   : Block Attribute Extract
+  NickName    : BlockAttExtract
+  Message     : BlockAttExtract v2.1  (after a run: "found / requested layouts")
+  Description : Reads the attribute user text (key / value pairs) of a title-block
+                instance placed on each named layout (page view).
+                Branch {k} of Keys / Values belongs to FoundLayouts[k].
+
+  Inputs:
+    Run          : bool          (Item) - True = read the layouts
+    BlockName    : string        (Item) - Title-block definition name (not case-sensitive)
+    LayoutNames  : List<string>  (List) - Layout (page) names to read
+
+  Outputs:
+    Keys         : DataTree<string> - Attribute keys, sorted A-Z, one branch per found layout
+    Values       : DataTree<string> - Matching attribute values
+    FoundLayouts : List<string>     - Layouts that exist, in input order
 */
+#endregion
 
 using System;
 using System.Collections.Generic;
@@ -114,6 +128,8 @@ public class Script_Instance : GH_ScriptInstance
       keyTree.AddRange(ks, path);
       valTree.AddRange(vs, path);
     }
+
+    Component.Message = "BlockAttExtract v2.1 | " + found.Count + "/" + LayoutNames.Count(n => !string.IsNullOrWhiteSpace(n)) + " layouts";
 
     if (missingLayouts.Count > 0)
       Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Layout(s) not found: " + string.Join(", ", missingLayouts));
