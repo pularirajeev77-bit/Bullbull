@@ -2,9 +2,9 @@
   Author: Rajeev Pulari + Gemini
   Rhino 8 | Grasshopper C#
   Version: 2026.09.30
-  Component: Shared Nodes v2.1
+  Component: Shared Nodes v2.2
   Description: For every node (point), collects the curves whose start or end
-               touches it (6-decimal match). One tree branch per node, aligned
+               touches it (within Tolerance). One tree branch per node, aligned
                with the Points input list.
 */
 
@@ -27,6 +27,7 @@ public class Script_Instance : GH_ScriptInstance
     private void RunScript(
         List<Curve> Curves,
         List<Point3d> Points,
+        double Tolerance,
         ref object NodeCurves,
         ref object CurveIndices,
         ref object NodePoints,
@@ -38,11 +39,12 @@ public class Script_Instance : GH_ScriptInstance
         {
             this.Component.Name = "Group Curves Shared Nodes";
             this.Component.NickName = "sharedNodes";
-            this.Component.Message = "Shared Nodes v2.1";
+            this.Component.Message = "Shared Nodes v2.2";
             this.Component.Description = "Groups curves by the nodes (points) they start or end at. One tree branch per node.";
 
             SetTip(this.Component.Params.Input, 0, "Curves", "Curves (e.g. frame members) to group by their end points.");
             SetTip(this.Component.Params.Input, 1, "Points", "Nodes to test. Branch i of every output belongs to Points[i].");
+            SetTip(this.Component.Params.Input, 2, "Tolerance", "A curve end within this distance of a node counts as touching it. Zero or less uses the model tolerance. Item access.");
             SetTip(this.Component.Params.Output, 0, "NodeCurves", "Curves touching each node (one branch per node).");
             SetTip(this.Component.Params.Output, 1, "CurveIndices", "Index in Curves of each curve found at the node.");
             SetTip(this.Component.Params.Output, 2, "NodePoints", "The node point repeated once per touching curve.");
@@ -67,12 +69,24 @@ public class Script_Instance : GH_ScriptInstance
         DataTree<int> treePtIdx = new DataTree<int>();
         DataTree<Point3d> treeUnique = new DataTree<Point3d>();
 
-        // Point -> index lookup (first occurrence wins for duplicate points)
-        var pointMap = new Dictionary<Tuple<double, double, double>, int>();
+        // Tolerance: input, else model tolerance, else 0.001
+        double tol = Tolerance;
+        if (tol <= 0)
+            tol = (RhinoDoc.ActiveDoc != null) ? RhinoDoc.ActiveDoc.ModelAbsoluteTolerance : 0.001;
+        if (tol <= 0) tol = 0.001;
+
+        // Spatial hash: cell size = tol, so a match is always in the 3x3x3 neighbouring cells
+        var grid = new Dictionary<Tuple<long, long, long>, List<int>>();
         for (int i = 0; i < Points.Count; i++)
         {
-            var key = PointKey(Points[i]);
-            if (!pointMap.ContainsKey(key)) pointMap[key] = i;
+            var cell = CellOf(Points[i], tol);
+            List<int> bucket;
+            if (!grid.TryGetValue(cell, out bucket))
+            {
+                bucket = new List<int>();
+                grid[cell] = bucket;
+            }
+            bucket.Add(i);
         }
 
         int count = Points.Count;
@@ -93,22 +107,22 @@ public class Script_Instance : GH_ScriptInstance
 
             Point3d start = crv.PointAtStart;
             Point3d end = crv.PointAtEnd;
-            var startKey = PointKey(start);
-            var endKey = PointKey(end);
 
-            int idx;
-            if (pointMap.TryGetValue(startKey, out idx))
+            int startIdx = FindNode(grid, Points, start, tol);
+            int endIdx = FindNode(grid, Points, end, tol);
+
+            if (startIdx >= 0)
             {
-                groupedCurves[idx].Add(crv);
-                groupedIndex[idx].Add(i);
-                groupedPts[idx].Add(start);
+                groupedCurves[startIdx].Add(crv);
+                groupedIndex[startIdx].Add(i);
+                groupedPts[startIdx].Add(start);
             }
-            // A closed curve starts and ends on the same node: count it once
-            if (!endKey.Equals(startKey) && pointMap.TryGetValue(endKey, out idx))
+            // A curve whose two ends land on the same node is counted once
+            if (endIdx >= 0 && endIdx != startIdx)
             {
-                groupedCurves[idx].Add(crv);
-                groupedIndex[idx].Add(i);
-                groupedPts[idx].Add(end);
+                groupedCurves[endIdx].Add(crv);
+                groupedIndex[endIdx].Add(i);
+                groupedPts[endIdx].Add(end);
             }
         }
 
@@ -137,13 +151,38 @@ public class Script_Instance : GH_ScriptInstance
         UniqueNodes = treeUnique;
     }
 
-    // Point key (rounded to 6 decimals; +0 avoids a separate "-0" key)
-    private Tuple<double, double, double> PointKey(Point3d pt)
+    private Tuple<long, long, long> CellOf(Point3d pt, double tol)
     {
-        return new Tuple<double, double, double>(
-            Math.Round(pt.X, 6) + 0.0,
-            Math.Round(pt.Y, 6) + 0.0,
-            Math.Round(pt.Z, 6) + 0.0);
+        return new Tuple<long, long, long>(
+            (long)Math.Floor(pt.X / tol),
+            (long)Math.Floor(pt.Y / tol),
+            (long)Math.Floor(pt.Z / tol));
+    }
+
+    // Index of the closest node within tol of pt, or -1 (ties: lowest index)
+    private int FindNode(Dictionary<Tuple<long, long, long>, List<int>> grid, List<Point3d> nodes, Point3d pt, double tol)
+    {
+        var c = CellOf(pt, tol);
+        int best = -1;
+        double bestDist = double.MaxValue;
+        for (long dx = -1; dx <= 1; dx++)
+            for (long dy = -1; dy <= 1; dy++)
+                for (long dz = -1; dz <= 1; dz++)
+                {
+                    List<int> bucket;
+                    if (!grid.TryGetValue(new Tuple<long, long, long>(c.Item1 + dx, c.Item2 + dy, c.Item3 + dz), out bucket))
+                        continue;
+                    foreach (int idx in bucket)
+                    {
+                        double d = nodes[idx].DistanceTo(pt);
+                        if (d <= tol && (d < bestDist || (d == bestDist && idx < best)))
+                        {
+                            bestDist = d;
+                            best = idx;
+                        }
+                    }
+                }
+        return best;
     }
 
     private void SetTip(IList<IGH_Param> ps, int i, string name, string tip)

@@ -20,7 +20,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 3. The component takes its inputs and outputs from the `RunScript(...)` line.
    If they don't appear, add them by hand with the exact same names.
 
-Access types are listed per component below.
+Set `Curves` and `Points` to **list** access and `Tolerance` to **item** access.
 
 ## Components
 
@@ -36,7 +36,7 @@ Access types are listed per component below.
 **File:** `SharedNodes.cs`
 
 For each node you supply, finds every curve whose start or end point touches it
-(matched to 6 decimals) - e.g. all members meeting at a space-frame joint. Each
+(within a tolerance you set) - e.g. all members meeting at a space-frame joint. Each
 output is a tree with **one branch per node**, so branch `{i}` belongs to
 `Points[i]`.
 
@@ -44,6 +44,7 @@ output is a tree with **one branch per node**, so branch `{i}` belongs to
 |---|---|---|
 | `Curves` | list | Curves (frame members) to group |
 | `Points` | list | Nodes to test |
+| `Tolerance` | item | A curve end within this distance of a node counts as touching it. 0 or less uses the model tolerance |
 
 | Output | Meaning |
 |---|---|
@@ -57,6 +58,7 @@ output is a tree with **one branch per node**, so branch `{i}` belongs to
 - Nodes with no curves get an empty branch, so branches always line up with `Points`.
 - A closed curve (start = end) is counted once at its node (before it was listed twice).
 - Empty/missing inputs now give a warning instead of silently returning nothing.
+- Matching is a true distance test within `Tolerance` (spatial grid, fast on big frames) instead of 6-decimal rounding, so ends with tiny float differences are no longer missed. If two nodes are both in range, the closest wins.
 - Inputs/outputs were renamed from `curves, points, lines, lin_index, pts, pt_index, unique_pts`.
 - Not compiled here (no Rhino) - test in Grasshopper.
 
