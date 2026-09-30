@@ -20,7 +20,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`SpaceFrame`](https://github.com/pularirajeev77-bit/Bullbull/tree/SpaceFrame) | sharedNodes, nodeSize, HardLook |
 | [`Creation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Creation) | Bake, CadExport, SolidExport, CNCExport |
 | [`Tree`](https://github.com/pularirajeev77-bit/Bullbull/tree/Tree) | CreateTree, TreeSwap, TreeSwap+ |
-| [`TitleBlock`](https://github.com/pularirajeev77-bit/Bullbull/tree/TitleBlock) | BlockAttExtract, KeySearch |
+| [`TitleBlock`](https://github.com/pularirajeev77-bit/Bullbull/tree/TitleBlock) | BlockAttExtract, KeySearch, BlockAttEditor |
 
 ## All components
 
@@ -81,6 +81,7 @@ topic into branches — switch branch to see the code and full instructions.
 | TreeSwap+ | `Tree` | Swaps indices for 2+ names, prefixes {0} for 1 name |
 | BlockAttExtract | `TitleBlock` | Reads a title block's attribute text (key/value) from each layout |
 | KeySearch | `TitleBlock` | Flags which title-block keys contain any of the search keys |
+| BlockAttEditor | `TitleBlock` | Writes attribute text (key/value) back onto the title block on each layout |
 
 ## How to use a script
 
