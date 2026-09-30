@@ -74,6 +74,8 @@ public class Script_Instance : GH_ScriptInstance
         if (tol <= 0)
             tol = (RhinoDoc.ActiveDoc != null) ? RhinoDoc.ActiveDoc.ModelAbsoluteTolerance : 0.001;
         if (tol <= 0) tol = 0.001;
+        if (this.Component != null)
+            this.Component.Message = "Shared Nodes v2.2 | tol " + tol.ToString("0.######");
 
         // Spatial hash: cell size = tol, so a match is always in the 3x3x3 neighbouring cells
         var grid = new Dictionary<Tuple<long, long, long>, List<int>>();
