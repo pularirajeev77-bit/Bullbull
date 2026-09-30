@@ -28,6 +28,7 @@ Set `Curves` and `Points` to **list** access and `Tolerance` to **item** access.
 |---|---|---|
 | [sharedNodes](#sharednodes) | `SharedNodes.cs` | Groups curves by the nodes they start or end at |
 | [nodeSize](#nodesize) | `NodeSize.cs` | Sizes a node from the smallest angle between its members |
+| [HardLook](#hardlook) | `HardwareLookup.cs` | Looks up bolt/sleeve/cone/thread sizes for a pipe diameter from Excel |
 
 ---
 
@@ -101,3 +102,40 @@ Feed it from `sharedNodes`: `NodeCurves` -> `Curves` and `UniqueNodes` -> `Node`
 - Inputs/outputs were renamed from `lines, unique_pts, thk, dia, round` and
   `angle, length, radius, refpoint`.
 - Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## HardLook
+
+**File:** `HardwareLookup.cs`
+
+Reads a hardware table from an **Excel (.xlsx)** file and returns the bolt,
+sleeve, cone and thread sizes for a given **pipe diameter**. It reads the file
+directly (OLEDB), so Excel does not need to be open or even installed.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `ExcelPath` | item | Full path to the .xlsx table |
+| `PipeDiameter` | item | Pipe diameter to look up (rounded to a whole number) |
+
+| Output | Meaning |
+|---|---|
+| `BoltDiameter` | Bolt diameter |
+| `SleeveDiameter` | Sleeve diameter |
+| `SleeveLength` | Sleeve length |
+| `ConeDepth` | Cone depth |
+| `ThreadLength` | Thread length |
+
+**Table layout** - first row holds these headers (any order):
+`PipeDiameter, BoltDiameter, SleeveDiameter, SleeveLength, ConeDepth, ThreadLength`.
+Uses `Sheet1`, or the first sheet if there is no `Sheet1`.
+
+**Good to know**
+- Needs the **Microsoft Access Database Engine (64-bit)** on the PC; without it
+  you get a clear error. Rhino 8 loads the `System.Data.OleDb` package via the
+  `#r "nuget: ..."` line at the top (first run needs internet).
+- Not found / bad input -> every output is `10` and a message says why.
+- Numbers are parsed from text safely (the old version could crash on values
+  like `48.3` stored as text, and on comma-decimal PCs).
+- Missing column names are reported by name.
+- Not compiled here (no Rhino/Excel) - test in Grasshopper.
