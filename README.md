@@ -8,7 +8,7 @@ topic into branches — switch branch to see the code and full instructions.
 
 | Branch | Components |
 |---|---|
-| [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEXT) | Name-Format, Find&Replace, Search Text, Multi > Single-Line-Text, Single > Multi-Line-Text, GetNumbers, GetText, Plane><Text, Leader Points |
+| [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEXT) | Name-Format, Find&Replace, Search Text, Multi > Single-Line-Text, Single > Multi-Line-Text, GetNumbers, GetText, Plane><Text, Leader Points, Format-RealNumbers |
 | [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) | Bisect Frame |
 | [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) | CenterDiv, PVL, CrvClass, IntAng, IntAngDom, AdaptDiv, PolyPlus, VarChamfer |
 | [`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) | Calci, RemThruHole, PSize, CrtFold, DelFiles, ModFold, TimerCnt |
@@ -36,6 +36,7 @@ topic into branches — switch branch to see the code and full instructions.
 | GetText | `TEXT` | Keeps only the letters (`Beam 12 Column` → `Beam Column`) |
 | Plane><Text | `TEXT` | Plane → text and text → plane, for storing planes in Excel/CSV |
 | Leader Points | `TEXT` | Leader line with a landing leg, from a plane |
+| Format-RealNumbers | `TEXT` | Number -> text with exactly 14 decimals (exact value, no e-notation) |
 | Bisect Frame | `Vector` | Point, bisector vector and plane at every polyline vertex |
 | CenterDiv | `curves` | Divides a curve symmetrically from its middle |
 | PVL | `curves` | Lines from a point, a direction and a length |
