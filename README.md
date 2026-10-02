@@ -29,6 +29,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | Component | File | What it does |
 |---|---|---|
 | [CrvPlaneInt](#crvplaneint) | `CurvePlaneIntersect.cs` | Splits curves into those that hit a plane and those that don't, with indices |
+| [DirFilter](#dirfilter) | `CurveDirectionFilter.cs` | Splits curves by how well their direction matches a vector |
 
 ---
 
@@ -63,4 +64,42 @@ The component message shows `hits / misses`.
   longer crashes the tolerance lookup.
 - Metadata and tooltips are set once. Renamed from *Curve Plane Intersection Filter* /
   `CrvPlaneFilter` to *Curve Plane Intersect* / `CrvPlaneInt`.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## DirFilter
+
+**File:** `CurveDirectionFilter.cs` &middot; Component name: *Curve Direction Filter*
+
+Sorts curves by how well their **overall direction** (start point -> end point)
+matches a **target vector**, within an angle tolerance - e.g. pick out the
+vertical mullions or the members running along X. With `Bidirectional`, curves
+drawn the other way round match too.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Curves` | list | Curves to test |
+| `TargetVector` | item | Direction to match |
+| `AngleTolerance` | item | Max deviation in **degrees** (0 = model angle tolerance) |
+| `Bidirectional` | item | True = reversed (anti-parallel) curves also match |
+
+| Output | Meaning |
+|---|---|
+| `SelectedCurves` | Curves within the tolerance |
+| `RejectedCurves` | All other curves, incl. closed / zero-length ones |
+| `SelectedIndices` | Their indices in `Curves` |
+| `RejectedIndices` | Their indices in `Curves` |
+
+The component message shows `in / out`.
+
+**Good to know**
+- Direction is start -> end, so a curved or zigzag curve is judged by its chord.
+- **Tolerance 0 fix:** an unset tolerance meant "exact match only", which real
+  geometry almost never meets, so everything was rejected. 0 now uses the model's
+  angle tolerance.
+- Closed and (nearly) zero-length curves have no direction: they are rejected and
+  counted in a remark (before: only exactly-zero vectors were caught).
+- `Tolerance` renamed to `AngleTolerance` to make the **degrees** unit clear.
+- Messages show on the component (were `Print`); metadata and tooltips set once.
 - Not compiled here (no Rhino) - test in Grasshopper.
