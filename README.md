@@ -74,7 +74,7 @@ topic into branches — switch branch to see the code and full instructions.
 | CrvProp | `display` | Reports a curve's length, domain, type and more |
 | sharedNodes | `SpaceFrame` | Groups curves by the nodes (points) they start or end at |
 | nodeSize | `SpaceFrame` | Sizes a node from the smallest angle between its members |
-| HardLook | `SpaceFrame` | Looks up bolt/sleeve/cone/thread sizes for a pipe diameter from Excel |
+| HardLook | `SpaceFrame` | Looks up bolt/sleeve/cone/thread sizes for a pipe diameter from Excel (reference table [`HardLook.xlsx`](https://github.com/pularirajeev77-bit/Bullbull/blob/SpaceFrame/HardLook.xlsx)) |
 | Bake | `Creation` | Bakes geometry with name, layer, colour, print width, isocurves and grouping |
 | CadExport | `Creation` | Exports points, curves and text to a DWG/DXF file on one layer |
 | SolidExport | `Creation` | Exports one DWG/DXF per branch with breps as ACIS solids |
