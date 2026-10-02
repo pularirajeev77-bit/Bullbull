@@ -15,7 +15,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) | CullDupPt, FarPts, ClosePts, SideSort, PtOnCrv, RadSort, WeightSort, UVSort |
 | [`surface`](https://github.com/pularirajeev77-bit/Bullbull/tree/surface) | EdgeAn, DraftThick, SrfExt |
 | [`Plane`](https://github.com/pularirajeev77-bit/Bullbull/tree/Plane) | CamPlane |
-| [`Layers`](https://github.com/pularirajeev77-bit/Bullbull/tree/Layers) | CurrLyr, LBS, CHL, DLM, DVNE |
+| [`Layers`](https://github.com/pularirajeev77-bit/Bullbull/tree/Layers) | CurrLyr, LBS, CHL, DLM, DVNE, TDL, ViewGen |
 | [`display`](https://github.com/pularirajeev77-bit/Bullbull/tree/display) | Zebra, GoldEmap, CrvProp |
 | [`SpaceFrame`](https://github.com/pularirajeev77-bit/Bullbull/tree/SpaceFrame) | sharedNodes, nodeSize, HardLook |
 | [`Creation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Creation) | Bake, CadExport, SolidExport, CNCExport |
@@ -70,6 +70,8 @@ topic into branches — switch branch to see the code and full instructions.
 | CHL | `Layers` | Moves objects from one layer to another |
 | DLM | `Layers` | Shows/hides layers inside layout details |
 | DVNE | `Layers` | Lists layout details in reading order and renames them |
+| TDL | `Layers` | Locks / unlocks all detail views on layouts with one button |
+| ViewGen | `Layers` | Zooms to objects and saves a Named View (or clears all) |
 | Zebra | `display` | Zebra-stripe surface analysis in the viewport |
 | GoldEmap | `display` | Brushed-gold reflection map on geometry |
 | CrvProp | `display` | Reports a curve's length, domain, type and more |
