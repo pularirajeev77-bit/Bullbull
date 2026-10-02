@@ -28,6 +28,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [Zebra](#zebra) | `ZebraAnalysis.cs` | Zebra-stripe surface analysis in the viewport |
 | [GoldEmap](#goldemap) | `BrushedGoldEmap.cs` | Brushed-gold reflection map on geometry |
 | [CrvProp](#crvprop) | `CurveDetails.cs` | Reports a curve's length, domain, type and more |
+| [DynSplit](#dynsplit) | `DynamicSectionSplit.cs` | Live section: slide/rotate a cutting plane, get section curves and the kept side |
 
 ---
 
@@ -111,3 +112,44 @@ structure and type - as text/values you can panel out or use downstream.
 - This is a data/reporting tool rather than a viewport display; it lives here on
   the `display` branch by request, but fits the `curves` branch topically - say
   the word to move it.
+
+---
+
+## DynSplit
+
+**File:** `DynamicSectionSplit.cs` &middot; Component name: *Dynamic Section Split*
+
+A **live section tool**. A cutting plane slides over the geometry's bounding box
+and rotates about that point; you get the **section curves** and the geometry
+**kept on one side** of the plane (capped where possible, so it reads as a solid
+cut). Drive `Location` with an **MD Slider** and `Rotation` with sliders to scrub
+through a model.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Geometry` | list | Breps, Extrusions, Surfaces or Meshes |
+| `Location` | item | X, Y from 0 to 1 across the bounding box (Z ignored - plane at box centre height) |
+| `Rotation` | item | Rotation about world X, Y, Z in multiples of pi (`0.5` = 90 deg). `0,0,0` = horizontal plane |
+| `KeepSide` | item | `0` = keep the side behind the plane normal, `1` = in front (even / odd) |
+
+| Output | Meaning |
+|---|---|
+| `Sections` | Section curves |
+| `SplitGeometry` | Kept part of each object; the whole object if the plane misses it |
+| `CutPlane` | The cutting plane |
+
+**Good to know**
+- **Side, not index:** `Brep.Split` / `Mesh.Split` return the pieces in no fixed
+  order, so `KeepIndex` could flip sides as the plane moved, and with more than two
+  pieces it kept just one of them. Pieces are now chosen by which **side** of the
+  plane they are on, and every piece on that side is kept.
+- **Capped:** kept Brep pieces are capped where planar, so the cut shows as solid
+  (before they were open surfaces).
+- **Cutter size** follows the geometry (the fixed +-100 000 cutter missed very large
+  models).
+- Extrusions and Surfaces are accepted (before they were "unsupported"); unsupported
+  objects give one warning with a count instead of one per object.
+- Empty/invalid geometry and no open document are handled without crashing.
+- Renamed `Angle, KeepIndex` / `Section, SplitGeo` -> `Rotation, KeepSide` /
+  `Sections, SplitGeometry`; metadata and tooltips set once.
+- Not compiled here (no Rhino) - test in Grasshopper.
