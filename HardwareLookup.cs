@@ -9,6 +9,7 @@
   Description: Looks up node hardware (bolt, sleeve, cone, thread) for a pipe
                diameter from an Excel table (.xlsx) via OLEDB - no Excel process.
   Needs: Microsoft Access Database Engine (ACE.OLEDB.12.0), 64-bit, installed.
+  Reference table: HardLook.xlsx on the Bullbull SpaceFrame branch (Sheet1).
 */
 
 using System;
@@ -40,7 +41,7 @@ public class Script_Instance : GH_ScriptInstance
             Component.Description = "Looks up bolt / sleeve / cone / thread sizes for a pipe diameter from an Excel table.";
 
             var pi = Component.Params.Input;
-            SetTip(pi, "ExcelPath", "Full path to the .xlsx table (first row = column headers).");
+            SetTip(pi, "ExcelPath", "Full path to the .xlsx table, e.g. HardLook.xlsx from the SpaceFrame branch (first row = column headers).");
             SetTip(pi, "PipeDiameter", "Pipe diameter to look up. Rounded to a whole number before matching.");
             var po = Component.Params.Output;
             SetTip(po, "BoltDiameter", "Bolt diameter from the table (10 if not found).");

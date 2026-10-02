@@ -11,6 +11,10 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 [`Plane`](https://github.com/pularirajeev77-bit/Bullbull/tree/Plane) &middot;
 [`Layers`](https://github.com/pularirajeev77-bit/Bullbull/tree/Layers) &middot;
 [`display`](https://github.com/pularirajeev77-bit/Bullbull/tree/display) &middot;
+[`Creation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Creation) &middot;
+[`Tree`](https://github.com/pularirajeev77-bit/Bullbull/tree/Tree) &middot;
+[`TitleBlock`](https://github.com/pularirajeev77-bit/Bullbull/tree/TitleBlock) &middot;
+[`intersect`](https://github.com/pularirajeev77-bit/Bullbull/tree/intersect) &middot;
 [`main`](https://github.com/pularirajeev77-bit/Bullbull/tree/main) (overview)
 
 ## How to use a script
@@ -20,7 +24,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 3. The component takes its inputs and outputs from the `RunScript(...)` line.
    If they don't appear, add them by hand with the exact same names.
 
-Set `Curves` and `Points` to **list** access and `Tolerance` to **item** access.
+Access types are listed per component below.
 
 ## Components
 
@@ -30,78 +34,74 @@ Set `Curves` and `Points` to **list** access and `Tolerance` to **item** access.
 | [nodeSize](#nodesize) | `NodeSize.cs` | Sizes a node from the smallest angle between its members |
 | [HardLook](#hardlook) | `HardwareLookup.cs` | Looks up bolt/sleeve/cone/thread sizes for a pipe diameter from Excel |
 
+**Reference file:** [`HardLook.xlsx`](HardLook.xlsx) - the hardware table HardLook reads (see [HardLook](#hardlook)).
+
 ---
 
 ## sharedNodes
 
-**File:** `SharedNodes.cs`
+**File:** `SharedNodes.cs` &middot; Component name: *Group Curves Shared Nodes* &middot; v2.0
 
-For each node you supply, finds every curve whose start or end point touches it
-(within a tolerance you set) - e.g. all members meeting at a space-frame joint. Each
-output is a tree with **one branch per node**, so branch `{i}` belongs to
-`Points[i]`.
+For each node point, collects every curve whose **start or end point** sits on it -
+e.g. all members meeting at a space-frame joint. Points are matched by their
+coordinates **rounded to 6 decimals**. Each output is a tree with **one branch per
+node**, so branch `{i}` belongs to `points[i]`.
 
 | Input | Access | Meaning |
 |---|---|---|
-| `Curves` | list | Curves (frame members) to group |
-| `Points` | list | Nodes to test |
-| `Tolerance` | item | A curve end within this distance of a node counts as touching it. 0 or less uses the model tolerance |
+| `curves` | list | Curves (frame members) to group |
+| `points` | list | Node points |
 
 | Output | Meaning |
 |---|---|
-| `NodeCurves` | Curves touching each node |
-| `CurveIndices` | Index in `Curves` of each of those curves |
-| `NodePoints` | The node point, repeated once per touching curve |
-| `NodeIndices` | Index in `Points` of the node, repeated per curve |
-| `UniqueNodes` | One point per node that has at least one curve |
+| `lines` | Curves touching each node |
+| `lin_index` | Index in `curves` of each of those curves |
+| `pts` | The matching curve end point, once per touching curve |
+| `pt_index` | Index in `points` of the node, once per touching curve |
+| `unique_pts` | The node point once per branch (duplicates removed) |
 
 **Good to know**
-- Nodes with no curves get an empty branch, so branches always line up with `Points`.
-- A closed curve (start = end) is counted once at its node (before it was listed twice).
-- Empty/missing inputs now give a warning instead of silently returning nothing.
-- The tolerance actually used is shown under the component (`tol 0.001`). Leave `Tolerance` empty or 0 to use the Rhino model tolerance; any value above 0 overrides it.
-- Outputs are returned as typed Grasshopper trees (curve / point / integer), so `NodeCurves` can no longer arrive empty. A remark under the component reports how many nodes and curve ends matched; if none match you get a warning that suggests raising `Tolerance`. `UniqueNodes` now returns the node point itself.
-- Matching is a true distance test within `Tolerance` (spatial grid, fast on big frames) instead of 6-decimal rounding, so ends with tiny float differences are no longer missed. If two nodes are both in range, the closest wins.
-- Inputs/outputs were renamed from `curves, points, lines, lin_index, pts, pt_index, unique_pts`.
-- Not compiled here (no Rhino) - test in Grasshopper.
+- Matching is exact to 6 decimals: a curve end that differs from the node by more
+  than rounding noise (or sits right on a rounding boundary) is not matched.
+- Nodes with no curves get no items in their branch.
+- A closed curve whose start and end are on the same node is listed twice at that node.
+- If `points` is empty the outputs stay empty.
 
 ---
 
 ## nodeSize
 
-**File:** `NodeSize.cs`
+**File:** `NodeSize.cs` &middot; Component name: *Node Size Calculator* &middot; Message *Node Sizes v2.1*
 
-Sizes a **space-frame node**. It takes the members meeting at one node, finds the
-two that are closest together (smallest angle), and from that angle works out how
-long/large the node must be so the members clear each other.
+Sizes a **space-frame node**. From the members meeting at one node it finds the
+two that are closest together (smallest angle between them, measured towards each
+member's midpoint) and works out how long/large the node must be so the members
+clear each other:
 
-`Length = Diameter / sin(Angle / 2) + Thickness`, then `Radius` is `Length`
-rounded **up** to a multiple of `Rounding`.
+`length = dia / sin(angle / 2) + thk`, then `radius` = `length` rounded **up** to a
+multiple of `round`.
 
-Feed it from `sharedNodes`: `NodeCurves` -> `Curves` and `UniqueNodes` -> `Node`.
-`Curves` is a list and `Node` an item, so the component runs once per node.
+Feed it from sharedNodes: `lines` -> `lines` and `unique_pts` -> `unique_pts`.
+`lines` is list access and `unique_pts` item access, so it runs once per node.
 
 | Input | Access | Meaning |
 |---|---|---|
-| `Curves` | list | Members touching this node |
-| `Node` | item | The node point |
-| `Thickness` | item | Added wall thickness (0 or less uses 10) |
-| `Diameter` | item | Member diameter to clear (0 or less uses 12) |
-| `Rounding` | item | Radius rounds up to a multiple of this (0 or less uses 1) |
+| `lines` | list | Members touching this node |
+| `unique_pts` | item | The node point |
+| `thk` | item | Added wall thickness (0 or less uses 10) |
+| `dia` | item | Member diameter to clear (0 or less uses 12) |
+| `round` | item | Radius rounds up to a multiple of this (0 or less uses 1) |
 
 | Output | Meaning |
 |---|---|
-| `Angle` | Smallest angle between two members, degrees |
-| `Length` | Node length from the formula above |
-| `Radius` | `Length` rounded up to `Rounding` |
-| `RefPoint` | The node point |
+| `angle` | Smallest angle between two members, degrees |
+| `length` | Node length from the formula above |
+| `radius` | `length` rounded up to `round` |
+| `refpoint` | The node point |
 
 **Good to know**
-- With fewer than two usable members, or two overlapping members (angle ~0), the
-  size outputs stay empty and a message explains why.
-- Inputs/outputs were renamed from `lines, unique_pts, thk, dia, round` and
-  `angle, length, radius, refpoint`.
-- Not compiled here (no Rhino) - test in Grasshopper.
+- With fewer than two usable members the size outputs stay empty.
+- Two overlapping members (angle 0) give `length` and `radius` of 0.
 
 ---
 
@@ -115,7 +115,7 @@ directly (OLEDB), so Excel does not need to be open or even installed.
 
 | Input | Access | Meaning |
 |---|---|---|
-| `ExcelPath` | item | Full path to the .xlsx table |
+| `ExcelPath` | item | Full path to the .xlsx table, e.g. your local copy of [`HardLook.xlsx`](HardLook.xlsx) |
 | `PipeDiameter` | item | Pipe diameter to look up (rounded to a whole number) |
 
 | Output | Meaning |
@@ -126,7 +126,30 @@ directly (OLEDB), so Excel does not need to be open or even installed.
 | `ConeDepth` | Cone depth |
 | `ThreadLength` | Thread length |
 
-**Table layout** - first row holds these headers (any order):
+### Reference file: `HardLook.xlsx`
+
+[`HardLook.xlsx`](HardLook.xlsx) on this branch is the hardware table HardLook
+reads. Download it, keep it somewhere on your PC, and connect its full path to
+`ExcelPath` (e.g. with a File Path parameter). Edit or extend the rows in Excel -
+HardLook picks up the changes the next time it runs.
+
+`Sheet1` (all sizes in mm):
+
+| PipeDiameter | BoltDiameter | SleeveDiameter | SleeveLength | ConeDepth | ThreadLength |
+|---|---|---|---|---|---|
+| 48 | 12 | 26 | 25 | 24 | 19 |
+| 60 | 16 | 34 | 32 | 31 | 24 |
+| 73 | 20 | 42 | 40 | 39 | 29 |
+| 88 | 24 | 50 | 45 | 47 | 34 |
+| 114 | 30 | 64 | 55 | 59 | 41 |
+| 168 | 36 | 76 | 65 | 90 | 49 |
+| 219 | 48 | 98 | 96 | 116 | 72 |
+
+`PipeDiameter` is the tube outside diameter rounded to a whole number (e.g. a
+48.3 tube matches the `48` row). A diameter not in the table returns `10` for every
+output with a remark.
+
+**Table layout** (if you make your own file) - first row holds these headers (any order):
 `PipeDiameter, BoltDiameter, SleeveDiameter, SleeveLength, ConeDepth, ThreadLength`.
 Uses `Sheet1`, or the first sheet if there is no `Sheet1`.
 
