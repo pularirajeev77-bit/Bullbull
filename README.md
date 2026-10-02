@@ -25,6 +25,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [EdgeAn](#edgean) | `EdgeAnalyzer.cs` | Sorts a Brep's edges: outer, inner, naked, interior, non-manifold |
 | [DraftThick](#draftthick) | `DraftedThicken.cs` | Thickens a surface/polysurface/closed brep along its normals with a draft angle |
 | [SrfExt](#srfext) | `SurfaceExtender.cs` | Extends surfaces by a distance on each side (N/E/S/W) |
+| [SmoothGeo](#smoothgeo) | `SmoothGeo.cs` | Smooths meshes, curves and surfaces (Rhino Smooth) with axis / coordinate control |
 
 ---
 
@@ -136,4 +137,49 @@ you the frame at the centre of each original surface.
   counted in a warning. Errors show on the component (was `Print`).
 - Renamed: `Srf, N, E, S, W, T` / `Surf, Pln` ->
   `Surfaces, North, East, South, West, CenterPlanes` / `Extended, Planes`.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## SmoothGeo
+
+**File:** `SmoothGeo.cs` &middot; Component name: *Universal Smoother*
+
+Rhino's **Smooth** command as a component, for **Meshes, Curves, Surfaces** and
+single-face **Breps / Extrusions**. Each step moves points towards the average of
+their neighbours; you choose how far, how many steps, and along which axes of
+which coordinate system.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Geometry` | item | Mesh, Curve, Surface, single-face Brep or Extrusion |
+| `SmoothFactor` | item | -1..1, how far points move per step (0 = 0.5) |
+| `Steps` | item | Number of passes (0 = 1) |
+| `SmoothX` / `SmoothY` / `SmoothZ` | item | Which directions may move |
+| `FixBoundaries` | item | Keep open edges / curve ends fixed |
+| `CoordSystem` | item | `0` World, `1` CPlane (uses `SmoothPlane`), `2` Object |
+| `SmoothPlane` | item | Plane for `CoordSystem = 1` (missing = World XY) |
+| `VertexIndices` | list | **Mesh only** - smooth just these vertices (empty = all) |
+
+| Output | Meaning |
+|---|---|
+| `Result` | Smoothed geometry |
+| `Info` | What was done (steps completed, coordinate system) |
+
+**Good to know**
+- **CPlane fix:** the plane was only passed to meshes; curves and surfaces were
+  smoothed in CPlane mode **without** the plane, so `CoordSystem = 1` had no effect
+  on them. It is now used for all types.
+- **Mesh smooth result checked:** a failed mesh smooth (e.g. an out-of-range vertex
+  index) used to pass silently. Bad indices are now dropped with a warning, and a
+  step that fails stops the loop and is reported (`steps=done/asked`).
+- **Trimmed faces:** a trimmed single-face Brep is smoothed as its *untrimmed*
+  surface - you now get a warning about it.
+- Extrusions are accepted; all of X/Y/Z off gives a warning; unsupported types name
+  the type. Multi-face Breps are still not supported (deconstruct them first).
+- Renamed to full words: `geometry, smoothFactor, numSteps, xSmooth, ySmooth,
+  zSmooth, fixBoundaries, coordSystem, plane, vertexIndices` / `result, info` ->
+  `Geometry, SmoothFactor, Steps, SmoothX, SmoothY, SmoothZ, FixBoundaries,
+  CoordSystem, SmoothPlane, VertexIndices` / `Result, Info`. (`plane` became
+  `SmoothPlane` so it can't clash with the `Plane` type.)
 - Not compiled here (no Rhino) - test in Grasshopper.
