@@ -32,6 +32,7 @@ and keeps your list/tree shape) · **list** = the whole list at once ·
 | [AdaptDiv](#adaptdiv) | `AdaptiveDivide.cs` | Divides a curve with more points where it bends more |
 | [PolyPlus](#polyplus) | `PolylinePlus.cs` | Polyline through points, with chosen stretches as arcs |
 | [VarChamfer](#varchamfer) | `VariableChamfer.cs` | Chamfers chosen polyline corners, each with its own distance |
+| [BlendCrv](#blendcrv) | `CurveBlendG4.cs` | Blend curve between two curve ends, G0-G4 per side with bulge control |
 
 ---
 
@@ -308,3 +309,42 @@ by 50, corner 2 cut by 100, corners 1 and 3 untouched.
 - Open polylines: the first and last points are never chamfered.
 - A distance of 0 (or less) leaves that corner as it is.
 - A curve with fewer than 3 points is passed through unchanged.
+
+---
+
+## BlendCrv
+
+**File:** `CurveBlendG4.cs` &middot; Component name: *Curve Blend G0-G4*
+
+**Blend curve between two curve ends** (like Rhino's *BlendCrv*) with **G0 to G4
+continuity** chosen per side and a **bulge per order**. The result is one Bezier
+span of degree `ContinuityA + ContinuityB + 1`, built from the curves' exact
+derivatives.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `CurveA` / `CurveB` | item | Blend from the **end** of A to the **start** of B |
+| `FlipA` / `FlipB` | item | Use the other end (start of A / end of B) |
+| `BulgeA` / `BulgeB` | list | Bulge per order `[G1, G2, G3, G4]`; shorter list repeats its last value; empty = 1 |
+| `ContinuityA` / `ContinuityB` | item | `0` G0, `1` G1 tangent, `2` G2 curvature, `3` G3, `4` G4 |
+
+| Output | Meaning |
+|---|---|
+| `BlendCurve` | The blend curve |
+
+The component message shows the continuity used on each side.
+
+**Good to know**
+- **Compile fix:** messages were sent with `this.AddRuntimeMessage(...)`, which does
+  not exist on the script instance - it is now `Component.AddRuntimeMessage(...)`.
+- **Exact derivatives:** the curve derivatives were estimated with finite
+  differences (dividing by h^4 for the 4th derivative, and sampling across knots),
+  which made G3/G4 noisy and could be wrong right next to a knot. They now come
+  from Rhino's exact `DerivativeAt`, evaluated from inside each curve.
+- The construction math was checked numerically (tangent and curvature match both
+  curves to ~1e-15 for G1-G4, with and without flips and bulges).
+- Continuity outside 0..4 is clamped (before, any invalid value silently became G3);
+  zero/negative bulges and degenerate curve ends give a warning; the result is
+  checked for validity.
+- Metadata and tooltips added; names unchanged.
+- Not compiled here (no Rhino) - test in Grasshopper.
