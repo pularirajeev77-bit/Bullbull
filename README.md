@@ -30,6 +30,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 |---|---|---|
 | [CrvPlaneInt](#crvplaneint) | `CurvePlaneIntersect.cs` | Splits curves into those that hit a plane and those that don't, with indices |
 | [DirFilter](#dirfilter) | `CurveDirectionFilter.cs` | Splits curves by how well their direction matches a vector |
+| [CoplanarFilter](#coplanarfilter) | `CoplanarCurveFilter.cs` | Splits curves into those lying in a plane and the rest, with indices |
 
 ---
 
@@ -102,4 +103,37 @@ The component message shows `in / out`.
   counted in a remark (before: only exactly-zero vectors were caught).
 - `Tolerance` renamed to `AngleTolerance` to make the **degrees** unit clear.
 - Messages show on the component (were `Print`); metadata and tooltips set once.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## CoplanarFilter
+
+**File:** `CoplanarCurveFilter.cs` &middot; Component name: *Coplanar Curve Filter*
+
+Sorts curves into the ones lying **in** a reference plane (every part within the
+distance tolerance) and the rest - e.g. pick the outlines on one floor level or
+one facade plane. Compare with [CrvPlaneInt](#crvplaneint), which also accepts
+curves that just **cross** the plane.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Curves` | list | Curves to test |
+| `RefPlane` | item | Reference plane (missing = World XY) |
+| `Tolerance` | item | Max distance from the plane (0 = model tolerance) |
+
+| Output | Meaning |
+|---|---|
+| `CoplanarCurves` | Curves lying entirely in the plane |
+| `NonCoplanarCurves` | All other curves |
+| `CoplanarIndices` | Their indices in `Curves` |
+| `NonCoplanarIndices` | Their indices in `Curves` |
+
+The component message shows `in / out`.
+
+**Good to know**
+- Null/invalid curves are in neither output - a warning now says how many.
+- Messages show on the component (were `Print`). No open document no longer
+  crashes the tolerance lookup.
+- Metadata and tooltips set once; input/output names unchanged.
 - Not compiled here (no Rhino) - test in Grasshopper.
