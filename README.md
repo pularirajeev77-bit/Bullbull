@@ -21,6 +21,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`Creation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Creation) | Bake, CadExport, SolidExport, CNCExport |
 | [`Tree`](https://github.com/pularirajeev77-bit/Bullbull/tree/Tree) | CreateTree, TreeSwap, TreeSwap+ |
 | [`TitleBlock`](https://github.com/pularirajeev77-bit/Bullbull/tree/TitleBlock) | BlockAttExtract, KeySearch, BlockAttEditor, SrchBlk |
+| [`intersect`](https://github.com/pularirajeev77-bit/Bullbull/tree/intersect) | CrvPlaneFilter |
 
 ## All components
 
@@ -84,6 +85,7 @@ topic into branches — switch branch to see the code and full instructions.
 | KeySearch | `TitleBlock` | Flags which title-block keys contain any of the search keys |
 | BlockAttEditor | `TitleBlock` | Writes attribute text (key/value) back onto the title block on each layout |
 | SrchBlk | `TitleBlock` | Finds block names containing a search text |
+| CrvPlaneFilter | `intersect` | Splits curves into those that hit a plane and those that don't, with indices |
 
 ## How to use a script
 
