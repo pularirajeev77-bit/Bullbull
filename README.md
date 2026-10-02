@@ -13,7 +13,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) | CenterDiv, PVL, CrvClass, IntAng, IntAngDom, AdaptDiv, PolyPlus, VarChamfer |
 | [`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) | Calci, RemThruHole, PSize, CrtFold, DelFiles, ModFold, TimerCnt |
 | [`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) | CullDupPt, FarPts, ClosePts, SideSort, PtOnCrv, RadSort, WeightSort, UVSort |
-| [`surface`](https://github.com/pularirajeev77-bit/Bullbull/tree/surface) | EdgeAn, DraftThick, SrfExt |
+| [`surface`](https://github.com/pularirajeev77-bit/Bullbull/tree/surface) | EdgeAn, DraftThick, SrfExt, SmoothGeo |
 | [`Plane`](https://github.com/pularirajeev77-bit/Bullbull/tree/Plane) | CamPlane |
 | [`Layers`](https://github.com/pularirajeev77-bit/Bullbull/tree/Layers) | CurrLyr, LBS, CHL, DLM, DVNE, TDL, ViewGen |
 | [`display`](https://github.com/pularirajeev77-bit/Bullbull/tree/display) | Zebra, GoldEmap, CrvProp, DynSplit |
@@ -64,6 +64,7 @@ topic into branches — switch branch to see the code and full instructions.
 | EdgeAn | `surface` | Sorts a Brep's edges: outer, inner, naked, interior, non-manifold |
 | DraftThick | `surface` | Thickens a surface/polysurface/closed brep along its normals with a draft angle |
 | SrfExt | `surface` | Extends surfaces by a distance on each side (N/E/S/W) |
+| SmoothGeo | `surface` | Smooths meshes, curves and surfaces (Rhino Smooth) with axis / coordinate control |
 | CamPlane | `Plane` | Planes at points that face the camera |
 | CurrLyr | `Layers` | Sets the current layer, creating it if needed |
 | LBS | `Layers` | Creates and styles layer trees (colour + linetype) |
