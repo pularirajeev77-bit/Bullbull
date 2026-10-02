@@ -73,22 +73,25 @@ public class Script_Instance : GH_ScriptInstance
         }
         if (Run && Reset)
         {
-            status = "Error: 'Run' and 'Reset' cannot both be true.";
-            Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, (string)status);
+            string msg = "Error: 'Run' and 'Reset' cannot both be true.";
+            status = msg;
+            Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, msg);
             return;
         }
         if (Layouts == null || Details == null || LayerNames == null || Layouts.Count == 0 || Details.Count == 0 || LayerNames.Count == 0)
         {
-            status = "Error: Layouts, Details and LayerNames must all be provided.";
-            Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, (string)status);
+            string msg = "Error: Layouts, Details and LayerNames must all be provided.";
+            status = msg;
+            Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, msg);
             return;
         }
 
         RhinoDoc doc = RhinoDocument ?? RhinoDoc.ActiveDoc;
         if (doc == null)
         {
-            status = "Error: no active Rhino document.";
-            Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, (string)status);
+            string msg = "Error: no active Rhino document.";
+            status = msg;
+            Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, msg);
             return;
         }
 
@@ -98,8 +101,9 @@ public class Script_Instance : GH_ScriptInstance
         var targetLayers = doc.Layers.Where(l => !l.IsDeleted && (targets.Contains(l.Name) || targets.Contains(l.FullPath))).ToList();
         if (targetLayers.Count == 0)
         {
-            status = "Error: none of the LayerNames exist in this document.";
-            Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, (string)status);
+            string msg = "Error: none of the LayerNames exist in this document.";
+            status = msg;
+            Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, msg);
             return;
         }
 
@@ -167,8 +171,9 @@ public class Script_Instance : GH_ScriptInstance
         }
         catch (Exception ex)
         {
-            status = "Error: " + ex.Message;
-            Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, (string)status);
+            string msg = "Error: " + ex.Message;
+            status = msg;
+            Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, msg);
             return;
         }
         finally
