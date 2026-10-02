@@ -27,7 +27,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [CurrLyr](#currlyr) | `CurrentLayer.cs` | Sets the current layer, creating it if needed |
 | [LBS](#lbs) | `LayerBranchStyle.cs` | Creates and styles layer trees (colour + linetype) |
 | [CHL](#chl) | `ChangeLayer.cs` | Moves objects from one layer to another |
-| [DLM](#dlm) | `DetailLayerManager.cs` | Shows/hides layers inside layout details |
+| [DLM](#dlm) | `DetailLayerManager.cs` | Shows/hides layers inside layout details (v2.1) |
 
 ---
 
@@ -138,7 +138,7 @@ hide, or show layers per detail, without touching their overall visibility.
 | `Mode` | item | 0 = Show Only (show listed, hide all others); any other value = Hide listed |
 | `Layouts` | list | Layout page names to act on |
 | `Details` | list | Detail view names within those layouts |
-| `LayerNames` | list | Layer names to show/hide (matched by name, not full path) |
+| `LayerNames` | list | Layer names or full paths (`Parent::Child`) to show/hide |
 
 | Output | Meaning |
 |---|---|
@@ -149,6 +149,22 @@ hide, or show layers per detail, without touching their overall visibility.
   is on/off globally.
 - **Show Only (`Mode 0`)** hides every other layer in that detail; use `Reset`
   (or Show Only with the full layer list) to bring them back.
-- Layers are matched by **name**, so two sub-layers that share a leaf name are
-  both affected.
-- Missing layouts or details are noted and skipped, not fatal.
+- Layers are matched by **name or full path**. A plain name affects every layer
+  with that name; use `Parent::Child` to pick one.
+- **Show Only keeps parent layers visible**, so a listed sub-layer really shows
+  (before, its hidden parent still hid it).
+- Missing layouts or details are noted and skipped, not fatal; if no detail
+  matched at all you get a warning. Each run is one Undo step.
+
+**Fixes (v2.1)**
+- **It changed nothing:** visibility was set with the detail *object's* id, but
+  Rhino keys per-detail layer visibility by the detail's **viewport** id
+  (`detail.Viewport.Id`). Now uses the viewport id and commits the change.
+- **Crash on unnamed details:** a detail without a name made `d.Name.Equals(...)`
+  throw, which aborted the whole run with an error. Names are now compared safely.
+- **Pin names:** the old tooltip helper set pins by position and also renamed the
+  pin's `Name` (the script variable). With the extra `out` pin that shifted names
+  and could break the script. Pins are now found by name and only their
+  nickname/tooltip are set.
+- Only layers whose visibility actually changes are counted.
+- Not compiled here (no Rhino) - test in Grasshopper.
