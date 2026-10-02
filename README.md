@@ -27,6 +27,8 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [SrfExt](#srfext) | `SurfaceExtender.cs` | Extends surfaces by a distance on each side (N/E/S/W) |
 | [SmoothGeo](#smoothgeo) | `SmoothGeo.cs` | Smooths meshes, curves and surfaces (Rhino Smooth) with axis / coordinate control |
 | [BlendAnalyze](#blendanalyze) | `BlendEdgeAnalyzer.cs` | Blend surface between two brep edges (G0-G2) + its CVs, weights, Greville |
+| [MUVN+](#muvn) | `MoveUVNMatch.cs` | Moves surface CVs along U/V/Normal, or shrink-wraps the surface onto a target |
+| [SyncK](#synck) | `SyncKnotVectors.cs` | Copies a surface's knot vectors onto a structurally identical surface |
 
 ---
 
@@ -226,4 +228,75 @@ inner), so they line up with *Surface CP* style outputs.
   `blendBrep, points, weights, greville, uCount, vCount, report` ->
   `BrepA, EdgeIndexA, FlipA, ContinuityA` (and B) /
   `BlendBrep, ControlPoints, Weights, Greville, UCount, VCount, Report`.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## MUVN+
+
+**File:** `MoveUVNMatch.cs` &middot; Component name: *Move UVN + Match*
+
+Rhino's **MoveUVN** for surface control points, with a **shrink-wrap** mode.
+
+- `MatchTarget = False` - each control point moves along the surface's own **U**,
+  **V** and **normal** directions by the values in `UValues` / `VValues` /
+  `NValues` (lists cycle; order is U outer, V inner, like *Surface CP*).
+- `MatchTarget = True` - an **iterative closest-point fit**: up to 15 passes move the
+  control points until the surface lies on `TargetGeometry`.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `BaseSurface` | item | Surface to edit |
+| `UValues` / `VValues` / `NValues` | list | Move per control point along U / V / normal (cycle; empty = 0) |
+| `FixBoundaries` | item | Keep the edge control points in place |
+| `MatchTarget` | item | True = fit onto `TargetGeometry` (U/V/N ignored) |
+| `TargetGeometry` | item | Surface, Brep, Extrusion or Mesh |
+
+| Output | Meaning |
+|---|---|
+| `MovedSrf` | The edited NURBS surface |
+
+In fit mode the component message shows the passes used and the remaining gap.
+
+**Good to know**
+- **Parameter map fix:** each control point's spot on the surface was looked up on
+  `BaseSurface` but then evaluated on its NURBS copy; for surfaces whose NURBS form
+  is parameterised differently (e.g. revolved / sum surfaces) that tracked the wrong
+  spots. The map is now taken on the NURBS surface itself.
+- **Stops when it fits:** the fit ends early once every gap is within the model
+  tolerance (before it always ran 15 passes); a remark gives the remaining gap if
+  it didn't fully converge. More control points = closer fit.
+- Extrusions are accepted as targets; control points without U/V/N directions
+  (degenerate spots) are counted in a warning instead of being skipped silently.
+- Metadata and tooltips set once; names unchanged.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## SyncK
+
+**File:** `SyncKnotVectors.cs` &middot; Component name: *SyncKnotVectors*
+
+Copies the **knot vectors** (parameterisation) of a base surface onto a target
+surface with the **same NURBS structure**, so both share the same U/V spacing -
+e.g. before blending, morphing or matching surfaces point for point. The target's
+control points stay where they are.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `BaseSurface` | item | Surface whose knots are copied |
+| `TargetSurface` | item | Surface that receives them |
+
+| Output | Meaning |
+|---|---|
+| `SyncedSurface` | Target with the base surface's knot vectors |
+
+**Good to know**
+- **Structure check fix:** only the knot *counts* were compared. A degree-2 surface
+  with 5 control points and a degree-3 one with 4 both have 6 knots, so the copy
+  "succeeded" and produced a wrong surface. Degrees and control point counts are
+  now checked too, and the error says exactly what differs.
+- The result is checked for validity before it is output.
+- Renamed `base_surface, target_surface` / `result` -> `BaseSurface, TargetSurface`
+  / `SyncedSurface`; metadata and tooltips set once.
 - Not compiled here (no Rhino) - test in Grasshopper.
