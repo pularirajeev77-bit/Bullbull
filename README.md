@@ -26,6 +26,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [DraftThick](#draftthick) | `DraftedThicken.cs` | Thickens a surface/polysurface/closed brep along its normals with a draft angle |
 | [SrfExt](#srfext) | `SurfaceExtender.cs` | Extends surfaces by a distance on each side (N/E/S/W) |
 | [SmoothGeo](#smoothgeo) | `SmoothGeo.cs` | Smooths meshes, curves and surfaces (Rhino Smooth) with axis / coordinate control |
+| [BlendAnalyze](#blendanalyze) | `BlendEdgeAnalyzer.cs` | Blend surface between two brep edges (G0-G2) + its CVs, weights, Greville |
 
 ---
 
@@ -182,4 +183,47 @@ which coordinate system.
   `Geometry, SmoothFactor, Steps, SmoothX, SmoothY, SmoothZ, FixBoundaries,
   CoordSystem, SmoothPlane, VertexIndices` / `Result, Info`. (`plane` became
   `SmoothPlane` so it can't clash with the `Plane` type.)
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## BlendAnalyze
+
+**File:** `BlendEdgeAnalyzer.cs` &middot; Component name: *Brep Advanced Blender*
+
+Builds a **blend surface between an edge of Brep A and an edge of Brep B** (like
+Rhino's *BlendSrf*) and reads out its **NURBS structure**: control points,
+weights and Greville parameters - in Grasshopper's native order (U outer, V
+inner), so they line up with *Surface CP* style outputs.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `BrepA` / `BrepB` | item | The two breps |
+| `EdgeIndexA` / `EdgeIndexB` | item | Edge to blend from / to |
+| `FlipA` / `FlipB` | item | Flip the blend direction on that side |
+| `ContinuityA` / `ContinuityB` | item | `0` G0 position, `1` G1 tangency, `2` G2 curvature |
+
+| Output | Meaning |
+|---|---|
+| `BlendBrep` | The blend surface(s) |
+| `ControlPoints` | Control points, U outer / V inner |
+| `Weights` | Matching weights |
+| `Greville` | Greville parameters as points `{u, v, 0}` |
+| `UCount` / `VCount` | Control point counts |
+| `Report` | Degrees, CV grid, continuity actually used |
+
+**Good to know**
+- **G3/G4 are not available here:** RhinoCommon's `BlendContinuity` only has
+  Position, Tangency and Curvature (G0-G2). The old code cast 3 and 4 to
+  non-existent enum values, and its report claimed "G3/G4 Optimized" just because
+  there were 5+ control points. Continuity is now clamped to 0-2 with a remark, and
+  the report and component message show what was really built.
+- Edge indices are checked first (an out-of-range index gave a raw exception); an
+  edge without faces is caught; interior (non-naked) edges get a remark.
+- The report also says whether the surface is rational and if the blend came back
+  in several pieces (the analysis uses the first).
+- Renamed to full words: `brepA, edgeIndexA, flipA, continuityA` (and B) /
+  `blendBrep, points, weights, greville, uCount, vCount, report` ->
+  `BrepA, EdgeIndexA, FlipA, ContinuityA` (and B) /
+  `BlendBrep, ControlPoints, Weights, Greville, UCount, VCount, Report`.
 - Not compiled here (no Rhino) - test in Grasshopper.
