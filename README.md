@@ -34,6 +34,7 @@ and keeps your list/tree shape) · **list** = the whole list at once ·
 | [GetText](#gettext) | `GetText.cs` | Keeps only the letters of text |
 | [Plane><Text](#planetext) | `PlaneTextConverter.cs` | Plane → text, and text → plane |
 | [Leader Points](#leader-points) | `LeaderPoints.cs` | Leader line with a landing leg, from a plane |
+| [Format-RealNumbers](#format-realnumbers) | `FormatRealNumbers.cs` | Number -> text with exactly 14 decimals (exact value, no e-notation) |
 
 ---
 
@@ -274,3 +275,44 @@ short horizontal **landing leg** (like a dimension or tag leader).
   leans (left leader → leg goes left).
 - `parameter` can be outside 0–1 (`1.25` is the same as `0.25`).
 - A length of 0 gives no curve, but `pts` still has all 3 points.
+
+---
+
+## Format-RealNumbers
+
+**File:** `FormatRealNumbers.cs` &middot; Component name: *Format Real Numbers*
+
+Writes a number as **text with exactly 14 decimals**, showing the **exact value
+stored** in the number - no scientific notation (`1E-05`) and no rounding to
+15-17 digits. Useful for exporting coordinates or dimensions to text/CSV, or for
+comparing numbers as text. Text going in passes through unchanged.
+
+It is a C# port of the Python `"{0:.14F}".format(Decimal(float(x)))` (round half
+to even), and gives the same text.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Number` | item | Number (or integer); text passes through |
+
+| Output | Meaning |
+|---|---|
+| `Text` | The formatted number |
+
+| Number | Text |
+|---|---|
+| `0.1` | `0.10000000000000` |
+| `-2.5` | `-2.50000000000000` |
+| `1e-5` | `0.00001000000000` |
+| `1e20` | `100000000000000000000.00000000000000` |
+
+**Good to know**
+- Shows the true stored value: `0.1` is really `0.1000000000000000055...`, which
+  rounds to `0.10000000000000` at 14 decimals.
+- **Integer input fixed:** a Grasshopper integer could not be converted and came out
+  unformatted; all number types are now unwrapped first.
+- `NaN` / `Infinity` are written like Python (`NaN`, `Infinity`) - .NET could write `∞`
+  depending on the PC's settings. All text is culture-independent (dot decimals).
+- Non-numbers give a warning and are passed through as text.
+- Renamed `x` / `R` to `Number` / `Text`; metadata and tooltips added.
+- The algorithm was checked against Python's `Decimal` on 40,000 random values
+  (identical); not compiled here (no Rhino) - test in Grasshopper.
