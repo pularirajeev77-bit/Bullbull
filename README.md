@@ -16,7 +16,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`surface`](https://github.com/pularirajeev77-bit/Bullbull/tree/surface) | EdgeAn, DraftThick, SrfExt |
 | [`Plane`](https://github.com/pularirajeev77-bit/Bullbull/tree/Plane) | CamPlane |
 | [`Layers`](https://github.com/pularirajeev77-bit/Bullbull/tree/Layers) | CurrLyr, LBS, CHL, DLM, DVNE, TDL, ViewGen |
-| [`display`](https://github.com/pularirajeev77-bit/Bullbull/tree/display) | Zebra, GoldEmap, CrvProp |
+| [`display`](https://github.com/pularirajeev77-bit/Bullbull/tree/display) | Zebra, GoldEmap, CrvProp, DynSplit |
 | [`SpaceFrame`](https://github.com/pularirajeev77-bit/Bullbull/tree/SpaceFrame) | sharedNodes, nodeSize, HardLook |
 | [`Creation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Creation) | Bake, CadExport, SolidExport, CNCExport |
 | [`Tree`](https://github.com/pularirajeev77-bit/Bullbull/tree/Tree) | CreateTree, TreeSwap, TreeSwap+ |
@@ -75,6 +75,7 @@ topic into branches — switch branch to see the code and full instructions.
 | Zebra | `display` | Zebra-stripe surface analysis in the viewport |
 | GoldEmap | `display` | Brushed-gold reflection map on geometry |
 | CrvProp | `display` | Reports a curve's length, domain, type and more |
+| DynSplit | `display` | Live section: slide/rotate a cutting plane, get section curves and the kept side |
 | sharedNodes | `SpaceFrame` | Groups curves by the nodes (points) they start or end at |
 | nodeSize | `SpaceFrame` | Sizes a node from the smallest angle between its members |
 | HardLook | `SpaceFrame` | Looks up bolt/sleeve/cone/thread sizes for a pipe diameter from Excel (reference table [`HardLook.xlsx`](https://github.com/pularirajeev77-bit/Bullbull/blob/SpaceFrame/HardLook.xlsx)) |
