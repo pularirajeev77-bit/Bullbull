@@ -21,7 +21,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`Creation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Creation) | Bake, CadExport, SolidExport, CNCExport |
 | [`Tree`](https://github.com/pularirajeev77-bit/Bullbull/tree/Tree) | CreateTree, TreeSwap, TreeSwap+ |
 | [`TitleBlock`](https://github.com/pularirajeev77-bit/Bullbull/tree/TitleBlock) | BlockAttExtract, KeySearch, BlockAttEditor, SrchBlk |
-| [`intersect`](https://github.com/pularirajeev77-bit/Bullbull/tree/intersect) | CrvPlaneInt, DirFilter |
+| [`intersect`](https://github.com/pularirajeev77-bit/Bullbull/tree/intersect) | CrvPlaneInt, DirFilter, CoplanarFilter |
 
 ## All components
 
@@ -87,6 +87,7 @@ topic into branches — switch branch to see the code and full instructions.
 | SrchBlk | `TitleBlock` | Finds block names containing a search text |
 | CrvPlaneInt | `intersect` | Splits curves into those that hit a plane and those that don't, with indices |
 | DirFilter | `intersect` | Splits curves by how well their direction matches a vector |
+| CoplanarFilter | `intersect` | Splits curves into those lying in a plane and the rest, with indices |
 
 ## How to use a script
 
