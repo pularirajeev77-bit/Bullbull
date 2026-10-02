@@ -29,6 +29,8 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [CHL](#chl) | `ChangeLayer.cs` | Moves objects from one layer to another |
 | [DLM](#dlm) | `DetailLayerManager.cs` | Shows/hides layers inside layout details (v2.1) |
 | [DVNE](#dvne) | `DetailViewNameEditor.cs` | Lists layout details in reading order and renames them |
+| [TDL](#tdl) | `ToggleDetailLocks.cs` | Locks / unlocks all detail views on layouts with one button |
+| [ViewGen](#viewgen) | `NamedViewsCreator.cs` | Zooms to objects and saves a Named View (or clears all) |
 
 ---
 
@@ -211,4 +213,72 @@ that order. Handy to give every sheet the same detail names (`PLAN`, `ELEV`,
 - Missing document / layouts are messages on the component (were `Print`).
 - Renamed: `LNames, DNames` / `DViews, DIds, DRect, DCent, DOut` ->
   `Layouts, DetailNames` / `Details, DetailIds, Rectangles, Centers, Names`.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## TDL
+
+**File:** `ToggleDetailLocks.cs` &middot; Component name: *ToggleDetailLocks*
+
+**Locks or unlocks the projection of every detail view** on the given layouts
+with one button - lock them all before plotting, unlock to adjust.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Toggle` | item | Connect a **Button**; one press = one toggle |
+| `Layouts` | list | Layout page names |
+
+| Output | Meaning |
+|---|---|
+| `Report` | Details per layout, how many changed, and the new state |
+
+**Each press:** if *any* listed detail is unlocked, all are **locked**; if all are
+already locked, all are **unlocked**. The component message shows the state.
+
+**Good to know**
+- **In sync with the file:** the old version remembered its own on/off flag, which
+  reset to "unlocked" whenever the file or component was reopened - so the first
+  press could do the opposite of what you expected. It now looks at the details'
+  real lock state.
+- **One toggle per press:** with a Toggle instead of a Button, the old version
+  flipped on every recompute. It now acts only when the input goes False -> True.
+- Each press is one **Undo** step; layout names are matched safely (no crash on
+  odd names); no open document gives a clear message.
+- Renamed `button, layout_names, result` -> `Toggle, Layouts, Report`.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## ViewGen
+
+**File:** `NamedViewsCreator.cs` &middot; Component name: *Named Views Creator*
+
+**Zooms the active viewport to fit the given objects and saves it as a Named
+View** (an existing view with the same name is replaced). `Clear` deletes **all**
+named views in the document.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Objects` | list | Geometry, Rhino object ids, or referenced objects to frame |
+| `Name` | item | Named view to create / update |
+| `Run` | item | True = zoom and save |
+| `Clear` | item | True = delete **ALL** named views (takes priority over `Run`) |
+
+| Output | Meaning |
+|---|---|
+| `Result` | What happened |
+| `NameOut` | The saved view name |
+
+**Good to know**
+- **Frames all objects now:** the old `Objs` input was item access, so the
+  component ran once per object and each run overwrote the view - the saved view
+  only fitted the **last** object. `Objects` is now a list and the view fits all of them.
+- Referenced Rhino objects and object ids (`GH_Guid`) are now measured from the
+  document object; before, ids coming in as Grasshopper data were ignored.
+- Uses the **active** viewport, which stays zoomed afterwards.
+- **Careful with `Clear`:** it removes every named view in the file, not just `Name`.
+- Reports "created" vs "updated", and a failed save; items without geometry are
+  counted in a remark.
+- Renamed `Objs` -> `Objects`; metadata and tooltips set once.
 - Not compiled here (no Rhino) - test in Grasshopper.
