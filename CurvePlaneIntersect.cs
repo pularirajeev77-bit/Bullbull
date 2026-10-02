@@ -1,9 +1,9 @@
 #region Metadata
 /*
   Platform    : Rhino 8 | Grasshopper C#
-  Component   : Curve Plane Intersection Filter
-  NickName    : CrvPlaneFilter
-  Message     : Crv Plane Filter v2.1
+  Component   : Curve Plane Intersect
+  NickName    : CrvPlaneInt
+  Message     : Crv Plane Intersect v2.1
   Description : Sorts curves into the ones that cross / touch a reference plane
                 and the ones that don't, with their original list indices.
 
@@ -47,12 +47,12 @@ public class Script_Instance : GH_ScriptInstance
         ref object NonIntersectingIndices)
     {
         // Metadata + pin tooltips (once)
-        if (Component != null && Component.Name != "Curve Plane Intersection Filter")
+        if (Component != null && Component.Name != "Curve Plane Intersect")
         {
-            Component.Name        = "Curve Plane Intersection Filter";
-            Component.NickName    = "CrvPlaneFilter";
-            Component.Message     = "Crv Plane Filter v2.1";
-            Component.Description = "Filters curves by intersection against a reference plane. "
+            Component.Name        = "Curve Plane Intersect";
+            Component.NickName    = "CrvPlaneInt";
+            Component.Message     = "Crv Plane Intersect v2.1";
+            Component.Description = "Tests curves for intersection with a reference plane. "
                                   + "Outputs intersecting and non-intersecting curves with their original indices.";
 
             var pi = Component.Params.Input;
@@ -116,7 +116,7 @@ public class Script_Instance : GH_ScriptInstance
             Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
                 skipped + " null/invalid curve(s) skipped - they are in neither output.");
 
-        Component.Message = "Crv Plane Filter v2.1 | " + intersecting.Count + " hit / " + nonIntersecting.Count + " miss";
+        Component.Message = "Crv Plane Intersect v2.1 | " + intersecting.Count + " hit / " + nonIntersecting.Count + " miss";
 
         IntersectingCurves = intersecting;
         NonIntersectingCurves = nonIntersecting;

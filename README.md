@@ -28,13 +28,13 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 
 | Component | File | What it does |
 |---|---|---|
-| [CrvPlaneFilter](#crvplanefilter) | `CurvePlaneFilter.cs` | Splits curves into those that hit a plane and those that don't, with indices |
+| [CrvPlaneInt](#crvplaneint) | `CurvePlaneIntersect.cs` | Splits curves into those that hit a plane and those that don't, with indices |
 
 ---
 
-## CrvPlaneFilter
+## CrvPlaneInt
 
-**File:** `CurvePlaneFilter.cs`
+**File:** `CurvePlaneIntersect.cs` &middot; Component name: *Curve Plane Intersect*
 
 Sorts a list of curves into the ones that **cross, touch or lie in** a reference
 plane and the ones that are **entirely on one side** of it - e.g. find the
@@ -61,5 +61,6 @@ The component message shows `hits / misses`.
   now says how many.
 - Messages show on the component (were `Print`, easy to miss). No open document no
   longer crashes the tolerance lookup.
-- Metadata and tooltips are set once.
+- Metadata and tooltips are set once. Renamed from *Curve Plane Intersection Filter* /
+  `CrvPlaneFilter` to *Curve Plane Intersect* / `CrvPlaneInt`.
 - Not compiled here (no Rhino) - test in Grasshopper.
