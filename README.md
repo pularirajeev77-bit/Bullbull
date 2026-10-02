@@ -10,7 +10,7 @@ topic into branches — switch branch to see the code and full instructions.
 |---|---|
 | [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEXT) | Name-Format, Find&Replace, Search Text, Multi > Single-Line-Text, Single > Multi-Line-Text, GetNumbers, GetText, Plane><Text, Leader Points, Format-RealNumbers |
 | [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) | Bisect Frame |
-| [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) | CenterDiv, PVL, CrvClass, IntAng, IntAngDom, AdaptDiv, PolyPlus, VarChamfer |
+| [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) | CenterDiv, PVL, CrvClass, IntAng, IntAngDom, AdaptDiv, PolyPlus, VarChamfer, BlendCrv |
 | [`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) | Calci, RemThruHole, PSize, CrtFold, DelFiles, ModFold, TimerCnt |
 | [`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) | CullDupPt, FarPts, ClosePts, SideSort, PtOnCrv, RadSort, WeightSort, UVSort |
 | [`surface`](https://github.com/pularirajeev77-bit/Bullbull/tree/surface) | EdgeAn, DraftThick, SrfExt, SmoothGeo, BlendAnalyze, MUVN+, SyncK |
@@ -46,6 +46,7 @@ topic into branches — switch branch to see the code and full instructions.
 | AdaptDiv | `curves` | Divides a curve with more points where it bends more |
 | PolyPlus | `curves` | Polyline through points, with chosen stretches as arcs |
 | VarChamfer | `curves` | Chamfers chosen polyline corners, each with its own distance |
+| BlendCrv | `curves` | Blend curve between two curve ends, G0-G4 per side with bulge control |
 | Calci | `utility` | Weight, area and volume of solids (Breps) |
 | RemThruHole | `utility` | Removes through holes from Brep faces by size or index |
 | PSize | `utility` | Length, width and height of a box |
