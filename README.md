@@ -28,6 +28,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [LBS](#lbs) | `LayerBranchStyle.cs` | Creates and styles layer trees (colour + linetype) |
 | [CHL](#chl) | `ChangeLayer.cs` | Moves objects from one layer to another |
 | [DLM](#dlm) | `DetailLayerManager.cs` | Shows/hides layers inside layout details (v2.1) |
+| [DVNE](#dvne) | `DetailViewNameEditor.cs` | Lists layout details in reading order and renames them |
 
 ---
 
@@ -167,4 +168,47 @@ hide, or show layers per detail, without touching their overall visibility.
   and could break the script. Pins are now found by name and only their
   nickname/tooltip are set.
 - Only layers whose visibility actually changes are counted.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## DVNE
+
+**File:** `DetailViewNameEditor.cs` &middot; Component name: *DViewNameEditor*
+
+Lists the **detail views on each layout in reading order** - rows from top to
+bottom, left to right inside a row - and **renames** them with `DetailNames` in
+that order. Handy to give every sheet the same detail names (`PLAN`, `ELEV`,
+`SECTION`...) so [DLM](#dlm) can target them by name.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Run` | item | True = read the details and apply the names |
+| `Layouts` | list | Layout page names |
+| `DetailNames` | list | New names in reading order, used for **every** layout. Empty = keep the existing names |
+
+| Output | Meaning |
+|---|---|
+| `Details` | Detail view objects, path `{layout}`, in reading order |
+| `DetailIds` | Their object ids (text) |
+| `Rectangles` | Detail frame on the page (null if it has no geometry) |
+| `Centers` | Frame centre on the page |
+| `Names` | The name each detail has now |
+
+**Good to know**
+- **Row fix:** details were sorted strictly by Y, so a row whose details were a
+  hair out of line came out in the wrong order (e.g. right-hand detail first).
+  Details whose centres are within a quarter of the smallest detail's height now
+  count as one row and are read left to right.
+- **Aligned branches:** a missing layout used to be skipped, so branch `{i}` no
+  longer matched `Layouts[i]`; it now gets an empty branch and a warning.
+- Renaming goes through the document (one **Undo** step per run) and the `Names`
+  output shows the real name after renaming; the message shows how many were
+  renamed. A remark appears when a layout has a different number of details than
+  names given.
+- `Rectangles` / `Centers` are now plain trees with null for missing frames (the
+  old nullable-struct trees may not show in Grasshopper).
+- Missing document / layouts are messages on the component (were `Print`).
+- Renamed: `LNames, DNames` / `DViews, DIds, DRect, DCent, DOut` ->
+  `Layouts, DetailNames` / `Details, DetailIds, Rectangles, Centers, Names`.
 - Not compiled here (no Rhino) - test in Grasshopper.
