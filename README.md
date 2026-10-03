@@ -22,6 +22,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`Tree`](https://github.com/pularirajeev77-bit/Bullbull/tree/Tree) | CreateTree, TreeSwap, TreeSwap+ |
 | [`TitleBlock`](https://github.com/pularirajeev77-bit/Bullbull/tree/TitleBlock) | BlockAttExtract, KeySearch, BlockAttEditor, SrchBlk |
 | [`intersect`](https://github.com/pularirajeev77-bit/Bullbull/tree/intersect) | CrvPlaneInt, DirFilter, CoplanarFilter |
+| [`shape`](https://github.com/pularirajeev77-bit/Bullbull/tree/shape) | Hybrid Interlock |
 
 ## All components
 
@@ -98,6 +99,7 @@ topic into branches — switch branch to see the code and full instructions.
 | CrvPlaneInt | `intersect` | Splits curves into those that hit a plane and those that don't, with indices |
 | DirFilter | `intersect` | Splits curves by how well their direction matches a vector |
 | CoplanarFilter | `intersect` | Splits curves into those lying in a plane and the rest, with indices |
+| Hybrid Interlock | `shape` | Interlocking (egg-crate / lap) notches between crossing members, any orientation, solids or surfaces |
 
 ## How to use a script
 
