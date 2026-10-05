@@ -11,7 +11,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEXT) | Name-Format, Find&Replace, Search Text, Multi > Single-Line-Text, Single > Multi-Line-Text, GetNumbers, GetText, Plane><Text, Leader Points, Format-RealNumbers |
 | [`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) | Bisect Frame |
 | [`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) | CenterDiv, PVL, CrvClass, IntAng, IntAngDom, AdaptDiv, PolyPlus, VarChamfer, BlendCrv |
-| [`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) | Calci, RemThruHole, PSize, CrtFold, DelFiles, ModFold, TimerCnt |
+| [`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) | Calci, RemThruHole, PSize, CrtFold, DelFiles, ModFold, TimerCnt, Cleanse |
 | [`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) | CullDupPt, FarPts, ClosePts, SideSort, PtOnCrv, RadSort, WeightSort, UVSort |
 | [`surface`](https://github.com/pularirajeev77-bit/Bullbull/tree/surface) | EdgeAn, DraftThick, SrfExt, SmoothGeo, BlendAnalyze, MUVN+, SyncK |
 | [`Plane`](https://github.com/pularirajeev77-bit/Bullbull/tree/Plane) | CamPlane |
@@ -55,6 +55,7 @@ topic into branches — switch branch to see the code and full instructions.
 | DelFiles | `utility` | Deletes files of one extension from a folder |
 | ModFold | `utility` | Folder of the saved Rhino model and Grasshopper file path |
 | TimerCnt | `utility` | Counts up over time; loops, pauses and resets |
+| Cleanse | `utility` | Clears all Rhino-referenced geometry from the Grasshopper file in one click |
 | CullDupPt | `point` | Removes duplicate points within a tolerance |
 | FarPts | `point` | Finds the two points that are farthest apart |
 | ClosePts | `point` | Finds the two points that are closest together |
