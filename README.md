@@ -21,7 +21,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`Creation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Creation) | Bake, CadExport, SolidExport, CNCExport |
 | [`Tree`](https://github.com/pularirajeev77-bit/Bullbull/tree/Tree) | CreateTree, TreeSwap, TreeSwap+ |
 | [`TitleBlock`](https://github.com/pularirajeev77-bit/Bullbull/tree/TitleBlock) | BlockAttExtract, KeySearch, BlockAttEditor, SrchBlk |
-| [`intersect`](https://github.com/pularirajeev77-bit/Bullbull/tree/intersect) | CrvPlaneInt, DirFilter, CoplanarFilter |
+| [`intersect`](https://github.com/pularirajeev77-bit/Bullbull/tree/intersect) | CrvPlaneInt, DirFilter, CoplanarFilter, CrvIntGrid |
 | [`shape`](https://github.com/pularirajeev77-bit/Bullbull/tree/shape) | Hybrid Interlock |
 | [`grid`](https://github.com/pularirajeev77-bit/Bullbull/tree/grid) | GridBoundList |
 
@@ -101,6 +101,7 @@ topic into branches — switch branch to see the code and full instructions.
 | CrvPlaneInt | `intersect` | Splits curves into those that hit a plane and those that don't, with indices |
 | DirFilter | `intersect` | Splits curves by how well their direction matches a vector |
 | CoplanarFilter | `intersect` | Splits curves into those lying in a plane and the rest, with indices |
+| CrvIntGrid | `intersect` | Curves in two directions -> ordered point grid (like PanelingTools ptIntersect) with a gap tolerance |
 | Hybrid Interlock | `shape` | Interlocking (egg-crate / lap) notches between crossing members, any orientation, solids or surfaces |
 | GridBoundList | `grid` | U/V grid of lines inside a closed boundary with repeating spacing lists, plus grid nodes |
 
