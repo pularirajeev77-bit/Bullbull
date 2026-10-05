@@ -31,6 +31,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [CrvPlaneInt](#crvplaneint) | `CurvePlaneIntersect.cs` | Splits curves into those that hit a plane and those that don't, with indices |
 | [DirFilter](#dirfilter) | `CurveDirectionFilter.cs` | Splits curves by how well their direction matches a vector |
 | [CoplanarFilter](#coplanarfilter) | `CoplanarCurveFilter.cs` | Splits curves into those lying in a plane and the rest, with indices |
+| [CrvIntGrid](#crvintgrid) | `CurveIntersectGrid.cs` | Intersects curves in two directions into an ordered point grid (like PanelingTools ptIntersect), with a gap tolerance |
 
 ---
 
@@ -137,3 +138,52 @@ The component message shows `in / out`.
   crashes the tolerance lookup.
 - Metadata and tooltips set once; input/output names unchanged.
 - Not compiled here (no Rhino) - test in Grasshopper.
+
+---
+
+## CrvIntGrid
+
+**File:** `CurveIntersectGrid.cs` &middot; Component name: *Curve Intersect Grid* &middot; v1.0
+
+Works like PanelingTools **ptIntersect**: give it curves running in **two directions**, get an
+**ordered point grid** back - one branch per row, items in column order - ready for paneling
+(PanelingTools cells, *Surface From Points*, your own panel scripts, ...).
+
+**The addition - `Tolerance`:** curves that don't quite touch still make a node when they come
+within `Tolerance` of each other: a curve that stops short, two curves at slightly different
+heights, drawing gaps. The node is placed in the middle of the gap. ptIntersect only finds
+exact intersections.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Curves` | list | All grid curves, both directions - split automatically by direction |
+| `Tolerance` | item | Largest gap that still counts as an intersection. **0 / empty = model tolerance** (exact only) |
+| `SwapDirections` | item | True = swap rows and columns |
+
+| Output | Meaning |
+|---|---|
+| `Grid` | Points, tree `{row}`, items in column order. **null** where a row and column don't meet |
+| `RowCurves` | Row-direction curves, sorted across the grid |
+| `ColCurves` | Column-direction curves, sorted across the grid |
+| `NodeType` | Same tree as `Grid`: `0` exact, `1` gap closed within tolerance, `-1` no node |
+
+The message shows `rows x cols`, plus how many nodes were near misses and how many are missing.
+
+**How it works**
+1. **Split:** the longest curve sets direction A; every curve within 45 deg of it (either way
+   round) is family A, the rest family B. A = rows, B = columns (`SwapDirections` flips this).
+2. **Sort:** rows are ordered across the grid by their midpoints, columns the same - so
+   `{0}` is the first row and item 0 the first column, whichever way the curves were drawn.
+3. **Nodes:** for every row x column pair: an exact intersection if there is one; otherwise
+   the closest points between the two curves, accepted if their gap is within `Tolerance`.
+
+**Good to know**
+- Every branch has the same number of items (`null` for a missing node), so columns stay
+  aligned. Use `NodeType` (`-1`) or *Clean Tree* if you want the nulls gone.
+- If a pair crosses more than once, the crossing nearest the row curve's start is used (remark).
+- Keep `Tolerance` well below the grid spacing - a tolerance as big as a bay would join curves
+  that are meant to be separate.
+- Curves running diagonally at about 45 deg to the longest curve can land in either family -
+  split them yourself and merge them in order if needed.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
