@@ -28,6 +28,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 | [DelFiles](#delfiles) | `DeleteFiles.cs` | Deletes files of one extension from a folder |
 | [ModFold](#modfold) | `RhinoModelFolder.cs` | Folder of the saved Rhino model and Grasshopper file path |
 | [TimerCnt](#timercnt) | `TimerCounter.cs` | Counts up over time; loops, pauses and resets |
+| [Cleanse](#cleanse) | `ReferenceCleanser.cs` | Clears all Rhino-referenced geometry from the Grasshopper file in one click |
 
 ---
 
@@ -242,3 +243,48 @@ milliseconds. Good for driving animations, step-throughs or slideshows.
 - While `Run` is True the component re-runs itself continuously, which uses some
   CPU - switch `Run` off when you don't need it.
 - Pausing keeps the current value; `reset` returns it to `start`.
+
+---
+
+## Cleanse
+
+**File:** `ReferenceCleanser.cs` &middot; Component name: *Global Reference Cleanser* &middot; v2.1
+
+Clears every **Rhino-referenced geometry** ("Set one / Set multiple ...") from the parameters
+of the current Grasshopper file in one click - e.g. before sending the file to someone, or to
+re-reference everything on a new Rhino model.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `Run` | item | Connect a **Button** - cleans once per press |
+
+| Output | Meaning |
+|---|---|
+| `Status` | Summary of the last clean |
+| `ClearedParameters` | `Component > Parameter (count)` for every parameter that was cleared |
+| `SkippedMixed` | Parameters holding **both** referenced and internalised data - left untouched |
+
+**What is kept**
+- **Wired** inputs (anything with a wire coming in) - their data is live, not stored.
+- **Internalised** geometry and non-geometry data (numbers, text, ...).
+- Parameters with **mixed** referenced + internalised data - listed in `SkippedMixed` so you
+  can clear them by hand.
+
+**Good to know**
+- One **Ctrl+Z** restores what was cleared.
+- Searches standalone parameters and component inputs on the canvas; parameters **inside
+  clusters** are not searched.
+
+**v2.1 fixes**
+- **Cleared inputs did not refresh:** parameters were expired while this component was still
+  solving, which Grasshopper does not allow. The clean now runs just before the next solution,
+  where expiring is allowed, and the component refreshes itself after.
+- **Ran repeatedly:** with a Toggle it cleaned on every solve while True; now once per press.
+- **Data reading:** stored data was read via reflection as an `IEnumerable`, which Grasshopper's
+  data trees aren't reliably; now read through `IGH_Structure`.
+- **Lost internalised data:** a parameter with both referenced and internalised items was
+  wiped completely; now skipped and reported.
+- **No undo:** an undo record is now made per cleared parameter.
+- Identity set once; tooltips; new `ClearedParameters` and `SkippedMixed` outputs.
+- Not compiled here (no Rhino) - test on a copy of the file.
+
