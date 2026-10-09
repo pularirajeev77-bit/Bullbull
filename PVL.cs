@@ -33,6 +33,8 @@ public class Script_Instance : GH_ScriptInstance
 		ref object PosLine,
 		ref object NegLine)
   {
+    SetPinTips();   // pin tooltips (set once, matched by name)
+
     this.Component.Message = "PVL v2.0";
     this.Component.NickName = "PVL";
 
@@ -146,5 +148,36 @@ public class Script_Instance : GH_ScriptInstance
   {
     if (tree.BranchCount == 0) return new List<T>();
     return tree.Branch(Math.Min(index, tree.BranchCount - 1));
+  }
+
+  // ---------------------------------------------------------------- pin tooltips
+  private bool _pinTipsSet = false;
+
+  private void SetPinTips()
+  {
+    if (_pinTipsSet || Component == null) return;
+    _pinTipsSet = true;
+    TipPin(Component.Params.Input, "P", "Points the lines start from (tree).");
+    TipPin(Component.Params.Input, "V", "Direction vectors — only the direction is used, not their length.");
+    TipPin(Component.Params.Input, "L", "Line lengths (tree).");
+    TipPin(Component.Params.Output, "Line", "Centered on the point: half the length each way (total length = L)");
+    TipPin(Component.Params.Output, "PosLine", "From the point, length L in the vector direction.");
+    TipPin(Component.Params.Output, "NegLine", "From the point, length L in the opposite direction.");
+  }
+
+  // Match pins by Name (the script variable), fall back to NickName.
+  // Only NickName/Description are changed - never Name.
+  private void TipPin(System.Collections.Generic.IList<Grasshopper.Kernel.IGH_Param> ps, string name, string tip)
+  {
+    if (ps == null) return;
+    Grasshopper.Kernel.IGH_Param hit = null;
+    foreach (Grasshopper.Kernel.IGH_Param p in ps)
+      if (string.Equals(p.Name, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null)
+      foreach (Grasshopper.Kernel.IGH_Param p in ps)
+        if (string.Equals(p.NickName, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null) return;
+    hit.NickName = name;
+    hit.Description = tip;
   }
 }

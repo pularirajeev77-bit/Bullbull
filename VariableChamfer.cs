@@ -19,6 +19,8 @@ public class Script_Instance : GH_ScriptInstance
     //   PLine - the chamfered polyline
     private void RunScript(object Crv, List<double> Dist, List<int> Idx, ref object PLine)
     {
+    SetPinTips();   // pin tooltips (set once, matched by name)
+
         // --- VISUAL META DATA ---
         Component.Name = "Variable Target Chamfer";
         Component.NickName = "VarChamfer 2.0";
@@ -192,4 +194,33 @@ public class Script_Instance : GH_ScriptInstance
         // 7. Output the final Polyline Curve
         PLine = new Polyline(cleanPts);
     }
+
+  // ---------------------------------------------------------------- pin tooltips
+  private bool _pinTipsSet = false;
+
+  private void SetPinTips()
+  {
+    if (_pinTipsSet || Component == null) return;
+    _pinTipsSet = true;
+    TipPin(Component.Params.Input, "Crv", "The polyline. Other curves are first converted to a polyline.");
+    TipPin(Component.Params.Input, "Dist", "Chamfer distance, measured from the corner along each edge.");
+    TipPin(Component.Params.Input, "Idx", "Which corners (vertex numbers, 0 = first; -1 = last). Empty → every corner.");
+    TipPin(Component.Params.Output, "PLine", "The chamfered polyline.");
+  }
+
+  // Match pins by Name (the script variable), fall back to NickName.
+  // Only NickName/Description are changed - never Name.
+  private void TipPin(System.Collections.Generic.IList<Grasshopper.Kernel.IGH_Param> ps, string name, string tip)
+  {
+    if (ps == null) return;
+    Grasshopper.Kernel.IGH_Param hit = null;
+    foreach (Grasshopper.Kernel.IGH_Param p in ps)
+      if (string.Equals(p.Name, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null)
+      foreach (Grasshopper.Kernel.IGH_Param p in ps)
+        if (string.Equals(p.NickName, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null) return;
+    hit.NickName = name;
+    hit.Description = tip;
+  }
 }

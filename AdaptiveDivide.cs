@@ -30,6 +30,8 @@ public class Script_Instance : GH_ScriptInstance
 		ref object Pts,
 		ref object PLine)
     {
+    SetPinTips();   // pin tooltips (set once, matched by name)
+
         // --- VISUAL META DATA (GRASSHOPPER CANVAS UI) ---
         Component.Name = "Adaptive Variable Divide";
         Component.NickName = "AdaptDiv";
@@ -217,4 +219,36 @@ public class Script_Instance : GH_ScriptInstance
 
         return maxDev;
     }
+
+  // ---------------------------------------------------------------- pin tooltips
+  private bool _pinTipsSet = false;
+
+  private void SetPinTips()
+  {
+    if (_pinTipsSet || Component == null) return;
+    _pinTipsSet = true;
+    TipPin(Component.Params.Input, "Crv", "The curve to divide (NURBS, polycurve, line, arc, circle …)");
+    TipPin(Component.Params.Input, "ForcePts", "Optional points — the division always includes the closest point on the curve to each.");
+    TipPin(Component.Params.Input, "CullIdx", "Optional indices of points to remove from the result; negative counts from the end (-1 = last)");
+    TipPin(Component.Params.Input, "Tol", "Max gap allowed between the curve and the polyline. Unplugged or 0 → 0.01.");
+    TipPin(Component.Params.Input, "MaxSeg", "Max number of polyline segments. Unplugged or 0 → 100; at least 4.");
+    TipPin(Component.Params.Output, "Pts", "The division points, in order along the curve.");
+    TipPin(Component.Params.Output, "PLine", "The polyline through those points.");
+  }
+
+  // Match pins by Name (the script variable), fall back to NickName.
+  // Only NickName/Description are changed - never Name.
+  private void TipPin(System.Collections.Generic.IList<Grasshopper.Kernel.IGH_Param> ps, string name, string tip)
+  {
+    if (ps == null) return;
+    Grasshopper.Kernel.IGH_Param hit = null;
+    foreach (Grasshopper.Kernel.IGH_Param p in ps)
+      if (string.Equals(p.Name, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null)
+      foreach (Grasshopper.Kernel.IGH_Param p in ps)
+        if (string.Equals(p.NickName, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null) return;
+    hit.NickName = name;
+    hit.Description = tip;
+  }
 }

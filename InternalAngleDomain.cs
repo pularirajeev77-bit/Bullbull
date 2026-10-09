@@ -29,6 +29,8 @@ public class Script_Instance : GH_ScriptInstance
 		ref object N,
 		ref object t)
     {
+    SetPinTips();   // pin tooltips (set once, matched by name)
+
         this.Component.Message = "Internal Angle v2.1";
         // "IntAngDom" so it can't be confused with the IntAng (< Ang)
         // component when both are on the canvas
@@ -164,4 +166,34 @@ public class Script_Instance : GH_ScriptInstance
         }
         return n;
     }
+
+  // ---------------------------------------------------------------- pin tooltips
+  private bool _pinTipsSet = false;
+
+  private void SetPinTips()
+  {
+    if (_pinTipsSet || Component == null) return;
+    _pinTipsSet = true;
+    TipPin(Component.Params.Input, "Crv", "A polyline (a list works; you get one branch per curve)");
+    TipPin(Component.Params.Input, "Dom", "Angle range as a domain, in radians, min and max included.");
+    TipPin(Component.Params.Output, "P", "The corner points whose angle is within Dom.");
+    TipPin(Component.Params.Output, "N", "At each of those corners, the direction splitting the angle in half, pointing inside the shape.");
+    TipPin(Component.Params.Output, "t", "Where each corner is on the curve (curve parameter)");
+  }
+
+  // Match pins by Name (the script variable), fall back to NickName.
+  // Only NickName/Description are changed - never Name.
+  private void TipPin(System.Collections.Generic.IList<Grasshopper.Kernel.IGH_Param> ps, string name, string tip)
+  {
+    if (ps == null) return;
+    Grasshopper.Kernel.IGH_Param hit = null;
+    foreach (Grasshopper.Kernel.IGH_Param p in ps)
+      if (string.Equals(p.Name, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null)
+      foreach (Grasshopper.Kernel.IGH_Param p in ps)
+        if (string.Equals(p.NickName, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null) return;
+    hit.NickName = name;
+    hit.Description = tip;
+  }
 }

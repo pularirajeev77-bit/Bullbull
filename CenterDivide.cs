@@ -27,6 +27,8 @@ public class Script_Instance : GH_ScriptInstance
 		List<object> Toggle,
 		ref object OUT)
     {
+    SetPinTips();   // pin tooltips (set once, matched by name)
+
         // 1. Set Component Metadata (Rhino 8 Native)
         this.Component.Message = "Center Divide v2.0";
         this.Component.NickName = "CenterDiv";
@@ -198,4 +200,33 @@ public class Script_Instance : GH_ScriptInstance
 
         return output;
     }
+
+  // ---------------------------------------------------------------- pin tooltips
+  private bool _pinTipsSet = false;
+
+  private void SetPinTips()
+  {
+    if (_pinTipsSet || Component == null) return;
+    _pinTipsSet = true;
+    TipPin(Component.Params.Input, "Curve", "The curves to divide.");
+    TipPin(Component.Params.Input, "Distance", "Spacing between points. One per curve; if the list is shorter, the last value is reused. Missing or ≤ 0 → 1.");
+    TipPin(Component.Params.Input, "Toggle", "Middle mode, one per curve (last value reused): True = a point at the middle, False = a gap at the middle (±D/2), unplugged = auto (no short end pieces). Also accepts 1/0, yes/no, on/off.");
+    TipPin(Component.Params.Output, "OUT", "The points, one branch per curve, in order from start to end.");
+  }
+
+  // Match pins by Name (the script variable), fall back to NickName.
+  // Only NickName/Description are changed - never Name.
+  private void TipPin(System.Collections.Generic.IList<Grasshopper.Kernel.IGH_Param> ps, string name, string tip)
+  {
+    if (ps == null) return;
+    Grasshopper.Kernel.IGH_Param hit = null;
+    foreach (Grasshopper.Kernel.IGH_Param p in ps)
+      if (string.Equals(p.Name, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null)
+      foreach (Grasshopper.Kernel.IGH_Param p in ps)
+        if (string.Equals(p.NickName, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null) return;
+    hit.NickName = name;
+    hit.Description = tip;
+  }
 }
