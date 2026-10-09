@@ -30,6 +30,8 @@ public class Script_Instance : GH_ScriptInstance
 		ref object pt_index,
 		ref object unique_pts)
     {
+    SetPinTips();   // pin tooltips (set once, matched by name)
+
         // --------------------------------------------------------------
         // 0️⃣ Set Component Metadata (Rhino 8 Native)
         // --------------------------------------------------------------
@@ -143,4 +145,36 @@ public class Script_Instance : GH_ScriptInstance
             Math.Round(pt.Z, 6)
             );
     }
+
+  // ---------------------------------------------------------------- pin tooltips
+  private bool _pinTipsSet = false;
+
+  private void SetPinTips()
+  {
+    if (_pinTipsSet || Component == null) return;
+    _pinTipsSet = true;
+    TipPin(Component.Params.Input, "curves", "Curves (frame members) to group.");
+    TipPin(Component.Params.Input, "points", "Node points.");
+    TipPin(Component.Params.Output, "lines", "Curves touching each node.");
+    TipPin(Component.Params.Output, "lin_index", "Index in curves of each of those curves.");
+    TipPin(Component.Params.Output, "pts", "The matching curve end point, once per touching curve.");
+    TipPin(Component.Params.Output, "pt_index", "Index in points of the node, once per touching curve.");
+    TipPin(Component.Params.Output, "unique_pts", "The node point once per branch (duplicates removed)");
+  }
+
+  // Match pins by Name (the script variable), fall back to NickName.
+  // Only NickName/Description are changed - never Name.
+  private void TipPin(System.Collections.Generic.IList<Grasshopper.Kernel.IGH_Param> ps, string name, string tip)
+  {
+    if (ps == null) return;
+    Grasshopper.Kernel.IGH_Param hit = null;
+    foreach (Grasshopper.Kernel.IGH_Param p in ps)
+      if (string.Equals(p.Name, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null)
+      foreach (Grasshopper.Kernel.IGH_Param p in ps)
+        if (string.Equals(p.NickName, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null) return;
+    hit.NickName = name;
+    hit.Description = tip;
+  }
 }

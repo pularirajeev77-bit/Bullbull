@@ -31,6 +31,8 @@ public class Script_Instance : GH_ScriptInstance
 		ref object radius,
 		ref object refpoint)
     {
+    SetPinTips();   // pin tooltips (set once, matched by name)
+
         // --------------------------------------------------------------
         // 0️⃣ Set Component Metadata
         // --------------------------------------------------------------
@@ -134,4 +136,38 @@ public class Script_Instance : GH_ScriptInstance
             radius = out_radius;
         }
     }
+
+  // ---------------------------------------------------------------- pin tooltips
+  private bool _pinTipsSet = false;
+
+  private void SetPinTips()
+  {
+    if (_pinTipsSet || Component == null) return;
+    _pinTipsSet = true;
+    TipPin(Component.Params.Input, "lines", "Members touching this node.");
+    TipPin(Component.Params.Input, "unique_pts", "The node point.");
+    TipPin(Component.Params.Input, "thk", "Added wall thickness (0 or less uses 10)");
+    TipPin(Component.Params.Input, "dia", "Member diameter to clear (0 or less uses 12)");
+    TipPin(Component.Params.Input, "round", "Radius rounds up to a multiple of this (0 or less uses 1)");
+    TipPin(Component.Params.Output, "angle", "Smallest angle between two members, degrees.");
+    TipPin(Component.Params.Output, "length", "Node length: dia / sin(angle / 2) + thk.");
+    TipPin(Component.Params.Output, "radius", "length rounded up to round.");
+    TipPin(Component.Params.Output, "refpoint", "The node point.");
+  }
+
+  // Match pins by Name (the script variable), fall back to NickName.
+  // Only NickName/Description are changed - never Name.
+  private void TipPin(System.Collections.Generic.IList<Grasshopper.Kernel.IGH_Param> ps, string name, string tip)
+  {
+    if (ps == null) return;
+    Grasshopper.Kernel.IGH_Param hit = null;
+    foreach (Grasshopper.Kernel.IGH_Param p in ps)
+      if (string.Equals(p.Name, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null)
+      foreach (Grasshopper.Kernel.IGH_Param p in ps)
+        if (string.Equals(p.NickName, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null) return;
+    hit.NickName = name;
+    hit.Description = tip;
+  }
 }
