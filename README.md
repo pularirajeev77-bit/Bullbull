@@ -29,27 +29,36 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 
 ## CamPlane
 
-**File:** `DynamicPlaneGenerator.cs`
+**File:** `DynamicPlaneGenerator.cs` &middot; Component name: *Dynamic Plane Generator* &middot; v2.1
 
-Makes a plane at each point that **faces the active viewport's camera** - handy
-for text tags or icons that should always face you. It can auto-refresh so the
-planes keep facing the camera as you orbit.
+Makes a plane at each point that **faces the active viewport's camera** - X = screen right,
+Y = screen up, normal toward you. Handy for text tags, icons or symbols that should always
+face you. With `AutoRefresh` on, the planes follow the camera as you orbit, pan or zoom.
 
 | Input | Access | Meaning |
 |---|---|---|
-| `Points` | item / list | Point(s) to place planes at |
-| `AutoRefresh` | item | True = keep re-solving so the planes track the camera as you orbit |
+| `Points` | list | Points to place planes at (list or tree - tree structure is kept) |
+| `AutoRefresh` | item | True = planes follow the camera; False = fixed until the next solve |
 
 | Output | Meaning |
 |---|---|
-| `Planes` | One camera-facing plane per input point |
+| `Planes` | One camera-facing plane per point, same order as `Points` |
+
+The message shows **Auto-Refreshing** or **Static**.
 
 **Good to know**
-- With `AutoRefresh = True` the component re-solves continuously (throttled to
-  about 10 times a second). That uses CPU, so switch it off when you are not
-  orbiting. The message on the component shows "Auto-Refreshing" or "Static".
-- The plane updates for the **active** viewport; click into the view you want
-  to face before relying on it.
-- If no view is available, it falls back to a single World XY plane.
-- Points can be a single value or a list; a single point now works correctly
-  (an earlier version placed it at the world origin).
+- `AutoRefresh` re-solves only when the camera **actually moves** (checked about 10 times a
+  second), so leaving it on costs almost nothing while you are not navigating.
+- The planes follow the **active** viewport - click into the view you want before relying on it.
+- No points, or no active view, gives a warning and no output.
+- A deleted component unhooks itself, so it cannot keep re-solving in the background.
+
+**v2.1 fixes**
+- **Pin names and tooltips:** they were set by pin position. Rhino 8 script components can have
+  an extra `out` pin first, so the `Planes` tooltip landed on the wrong pin; it also overwrote
+  each pin's script name. Pins are now found by name, and only the visible name and tooltip are set.
+- **Idle CPU:** auto-refresh re-solved 10 times a second even with a still camera; now only on
+  camera change.
+- **Empty input:** gave one plane at the world origin silently; now a warning.
+- `Points` is now a typed list (`List<Point3d>`), so lists and trees work without hand conversion.
+- Not compiled here (no Rhino) - test in Grasshopper.

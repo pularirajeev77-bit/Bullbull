@@ -1,15 +1,42 @@
 /*
-  Author: Rajeev Pulari + Gemini
-  Rhino 8 | Grasshopper C#
-  Version: 2025.11.11
-  Component: Dynamic Plane Generator
-  Description:
-    Creates camera-facing planes at given points.
-    Auto-refreshes while AutoRefresh = true using RhinoApp.Idle.
+  Component : Dynamic Plane Generator  (nickname: CamPlane)
+  Author    : Rajeev Pulari
+  Version   : 2.1  (2026-10-09)
+  Platform  : Rhino 8 | Grasshopper C# Script
+
+  Purpose
+  -------
+  Makes a plane at each point that faces the active viewport's camera
+  (X = screen right, Y = screen up, normal toward you) - for text tags,
+  icons or symbols that should always face the viewer. With AutoRefresh on,
+  the planes follow the camera as you orbit.
+
+  Inputs
+  ------
+  Points       (list) Points to place planes at (list or tree - one branch at a time).
+  AutoRefresh  (item) True = follow the camera while you orbit / pan / zoom.
+
+  Outputs
+  -------
+  Planes       One camera-facing plane per point, same order as Points.
+
+  v2.1 changes
+  ------------
+  - Wrong / missing pin names and tooltips: they were set by pin POSITION, and
+    Rhino 8 script components can have an extra "out" pin first, so the
+    "Planes" tooltip landed on the wrong pin. It also overwrote each pin's Name
+    (the script variable). Pins are now found by Name and only NickName and
+    Description are set.
+  - AutoRefresh re-solved 10 times a second even with the camera standing still
+    (constant CPU). It now re-solves only when the camera actually moves or the
+    active view changes.
+  - No points silently gave one plane at the world origin; now a warning and no
+    output.
+  - Points input is a typed list (List<Point3d>) instead of a hand-converted
+    object - lists and trees work natively, tree structure is kept.
 */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 using Rhino;
@@ -18,102 +45,135 @@ using Rhino.Display;
 
 using Grasshopper;
 using Grasshopper.Kernel;
-using Grasshopper.Kernel.Data;
-using Grasshopper.Kernel.Types;
 
 public class Script_Instance : GH_ScriptInstance
 {
-  // Track one Idle handler per component, plus a simple throttle
+  // One Idle handler and one last-seen camera state per component instance
   private static readonly Dictionary<Guid, EventHandler> IdleHandlers = new Dictionary<Guid, EventHandler>();
+  private static readonly Dictionary<Guid, string> LastCamera = new Dictionary<Guid, string>();
   private static readonly Dictionary<Guid, DateTime> LastTick = new Dictionary<Guid, DateTime>();
 
-  private void RunScript(object Points, bool AutoRefresh, ref object Planes)
+  private bool _metaSet = false;
+
+  private void RunScript(List<Point3d> Points, bool AutoRefresh, ref object Planes)
   {
-    // --- Metadata + pin tooltips (once) ---
-    if (this.Component != null && this.Component.Name != "Dynamic Plane Generator")
-    {
-      this.Component.Name = "Dynamic Plane Generator";
-      this.Component.NickName = "CamPlane";
-      this.Component.Description = "Makes planes at points that face the active viewport's camera. Can auto-refresh as you orbit.";
+    SetMetadata();
+    Component.Message = AutoRefresh ? "Auto-Refreshing" : "Static";
 
-      SetTip(this.Component.Params.Input, 0, "Points",
-        "Point(s) to place planes at (item, list or tree).");
-      SetTip(this.Component.Params.Input, 1, "AutoRefresh",
-        "True = re-solve continuously so the planes keep facing the camera as you orbit. Uses CPU; turn off when idle.");
-      SetTip(this.Component.Params.Output, 0, "Planes",
-        "One camera-facing plane per input point.");
-    }
-    if (this.Component != null)
-      this.Component.Message = AutoRefresh ? "Auto-Refreshing" : "Static";
-
-    // --- Gather points (item/list/tree), robust to GH_Point wrappers ---
-    // The old To<Point3d> only matched a raw Point3d, so a single point wired
-    // as an item (which arrives as GH_Point) fell through and the plane was
-    // silently placed at the world origin. GH_Convert handles every case.
-    var pts = GetPoints(Points);
-    if (pts.Count == 0) pts.Add(Point3d.Origin);
+    // --- Points ---
+    var pts = new List<Point3d>();
+    if (Points != null)
+      foreach (Point3d p in Points)
+        if (p.IsValid) pts.Add(p);
 
     // --- Active view ---
-    RhinoView view = RhinoDoc.ActiveDoc?.Views?.ActiveView;
+    RhinoView view = RhinoDoc.ActiveDoc != null ? RhinoDoc.ActiveDoc.Views.ActiveView : null;
     if (view == null)
     {
-      Planes = new List<Plane> { Plane.WorldXY };
-      ManageIdle(false); // ensure no handler left attached
+      Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No active Rhino view.");
+      ManageIdle(false);
       return;
     }
 
-    // --- Build planes facing camera ---
-    var planeList = new List<Plane>();
-    foreach (var pt in pts)
-      planeList.Add(CreateCameraFacingPlane(pt, view));
+    // Remember the camera we solved for, so Idle only re-solves when it changes
+    LastCamera[Component.InstanceGuid] = CameraKey(view);
 
+    if (pts.Count == 0)
+    {
+      Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Points: connect at least one valid point.");
+      ManageIdle(AutoRefresh);
+      return;
+    }
+
+    // --- Camera-facing planes ---
+    var planeList = new List<Plane>(pts.Count);
+    foreach (Point3d pt in pts)
+      planeList.Add(CreateCameraFacingPlane(pt, view));
     Planes = planeList;
 
-    // --- Manage idle-based auto-refresh ---
     ManageIdle(AutoRefresh);
   }
 
-  // Register/unregister RhinoApp.Idle for this component, with throttle
+  // Plane at pt with X = screen right, Y = screen up, normal toward the viewer.
+  private Plane CreateCameraFacingPlane(Point3d pt, RhinoView view)
+  {
+    var vp = view.ActiveViewport;
+    Vector3d n = vp.CameraDirection;
+    n.Unitize();
+
+    Vector3d x = Vector3d.CrossProduct(n, vp.CameraUp);
+    if (!x.IsValid || x.IsTiny())
+      x = Vector3d.CrossProduct(n, Vector3d.ZAxis);
+    if (!x.IsValid || x.IsTiny())
+      x = Vector3d.XAxis;
+    x.Unitize();
+
+    Vector3d y = Vector3d.CrossProduct(x, n);
+    y.Unitize();
+
+    return new Plane(pt, x, y);
+  }
+
+  // Compact signature of the active camera (view, location, direction, up)
+  private static string CameraKey(RhinoView view)
+  {
+    var vp = view.ActiveViewport;
+    Point3d c = vp.CameraLocation;
+    Vector3d d = vp.CameraDirection;
+    Vector3d u = vp.CameraUp;
+    return vp.Id + "|" +
+           c.X.ToString("R") + "," + c.Y.ToString("R") + "," + c.Z.ToString("R") + "|" +
+           d.X.ToString("R") + "," + d.Y.ToString("R") + "," + d.Z.ToString("R") + "|" +
+           u.X.ToString("R") + "," + u.Y.ToString("R") + "," + u.Z.ToString("R");
+  }
+
+  // Register / unregister RhinoApp.Idle for this component.
   private void ManageIdle(bool enable)
   {
     if (Component == null) return;
     Guid id = Component.InstanceGuid;
+    IGH_Component comp = Component;
 
     if (enable)
     {
-      if (!IdleHandlers.ContainsKey(id))
+      if (IdleHandlers.ContainsKey(id)) return;
+
+      EventHandler h = null;
+      h = (sender, args) =>
       {
-        EventHandler h = null;
-        h = (sender, args) =>
+        try
         {
-          try
+          // Self-detach if the component was deleted or its document closed
+          if (comp.OnPingDocument() == null)
           {
-            // Self-detach if the component was deleted or its document closed,
-            // so a removed component can't keep re-solving forever (the old
-            // version never unregistered on delete).
-            if (Component == null || Component.OnPingDocument() == null)
-            {
-              RhinoApp.Idle -= h;
-              IdleHandlers.Remove(id);
-              LastTick.Remove(id);
-              return;
-            }
-
-            // throttle to ~10 Hz (100ms) to avoid CPU spikes
-            DateTime last;
-            if (!LastTick.TryGetValue(id, out last) || (DateTime.UtcNow - last).TotalMilliseconds > 100)
-            {
-              LastTick[id] = DateTime.UtcNow;
-              Component.ExpireSolution(true);
-            }
+            RhinoApp.Idle -= h;
+            IdleHandlers.Remove(id);
+            LastTick.Remove(id);
+            LastCamera.Remove(id);
+            return;
           }
-          catch { /* swallow background errors */ }
-        };
 
-        RhinoApp.Idle += h;
-        IdleHandlers[id] = h;
-        LastTick[id] = DateTime.UtcNow;
-      }
+          // Check at most ~10 times a second
+          DateTime last;
+          if (LastTick.TryGetValue(id, out last) && (DateTime.UtcNow - last).TotalMilliseconds < 100) return;
+          LastTick[id] = DateTime.UtcNow;
+
+          // Re-solve only when the camera actually changed
+          RhinoView v = RhinoDoc.ActiveDoc != null ? RhinoDoc.ActiveDoc.Views.ActiveView : null;
+          if (v == null) return;
+          string key = CameraKey(v);
+          string seen;
+          if (LastCamera.TryGetValue(id, out seen) && seen == key) return;
+          LastCamera[id] = key;
+
+          comp.ExpireSolution(true);
+        }
+        catch { /* never let a background tick throw */ }
+      };
+
+      RhinoApp.Idle += h;
+      IdleHandlers[id] = h;
+      LastTick[id] = DateTime.UtcNow;
     }
     else
     {
@@ -127,58 +187,40 @@ public class Script_Instance : GH_ScriptInstance
     }
   }
 
-  // Create a plane at pt whose normal is aligned with the camera direction,
-  // so its XY lies flat in the screen (e.g. for text tags that always face you)
-  private Plane CreateCameraFacingPlane(Point3d pt, RhinoView view)
+  // ---------------------------------------------------------------- metadata
+
+  private void SetMetadata()
   {
-    var vp = view.ActiveViewport;
-    Vector3d camDir = vp.CameraDirection;
-    Vector3d up = vp.CameraUp;
+    if (_metaSet) return;
+    _metaSet = true;
 
-    Plane pln = new Plane(pt, camDir);
+    Component.Name = "Dynamic Plane Generator";
+    Component.NickName = "CamPlane";
+    Component.Description =
+      "Planes at points that face the active viewport's camera (X = screen right, Y = screen up). " +
+      "AutoRefresh keeps them facing you while you orbit. Rajeev Pulari, v2.1.";
 
-    // Build an orthonormal basis using the view "up" as reference
-    Vector3d x = Vector3d.CrossProduct(pln.Normal, up);
-    if (!x.IsValid || x.IsTiny())
-      x = Vector3d.CrossProduct(pln.Normal, Vector3d.ZAxis);
-
-    x.Unitize();
-    Vector3d y = Vector3d.CrossProduct(x, pln.Normal);
-    y.Unitize();
-
-    return new Plane(pt, x, y);
+    SetTip(Component.Params.Input, "Points",
+      "Points to place planes at (list or tree). One plane per point, same order.");
+    SetTip(Component.Params.Input, "AutoRefresh",
+      "True = planes follow the camera as you orbit/pan/zoom (re-solves only when the camera moves). False = fixed.");
+    SetTip(Component.Params.Output, "Planes",
+      "Camera-facing planes: X = screen right, Y = screen up, normal toward the viewer.");
   }
 
-  // Convert a GH input (item/list/tree) into a list of Point3d, robustly
-  private List<Point3d> GetPoints(object input)
+  // Match pins by Name (the script variable), fall back to NickName.
+  // Only NickName/Description are changed - never Name.
+  private void SetTip(IList<IGH_Param> ps, string name, string tip)
   {
-    var list = new List<Point3d>();
-    if (input == null) return list;
-
-    if (input is IEnumerable enumerable && !(input is string))
-    {
-      foreach (var item in enumerable)
-      {
-        Point3d p = Point3d.Unset;
-        if (GH_Convert.ToPoint3d(item, ref p, GH_Conversion.Both) && p.IsValid)
-          list.Add(p);
-      }
-      return list;
-    }
-
-    // Single item (raw Point3d or a GH_Point wrapper)
-    Point3d single = Point3d.Unset;
-    if (GH_Convert.ToPoint3d(input, ref single, GH_Conversion.Both) && single.IsValid)
-      list.Add(single);
-
-    return list;
-  }
-
-  private void SetTip(System.Collections.Generic.IList<IGH_Param> ps, int i, string name, string tip)
-  {
-    if (ps == null || i < 0 || i >= ps.Count) return;
-    ps[i].Name = name;
-    ps[i].NickName = name;
-    ps[i].Description = tip;
+    if (ps == null) return;
+    IGH_Param hit = null;
+    foreach (IGH_Param p in ps)
+      if (string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null)
+      foreach (IGH_Param p in ps)
+        if (string.Equals(p.NickName, name, StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null) return;
+    hit.NickName = name;
+    hit.Description = tip;
   }
 }
