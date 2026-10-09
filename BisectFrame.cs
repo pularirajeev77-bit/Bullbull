@@ -209,6 +209,8 @@ public class Script_Instance : GH_ScriptInstance
   // since Crv is typed Curve.)
   private void RunScript(Curve Crv, ref object Pt, ref object Vec, ref object Pln)
   {
+    SetPinTips();   // pin tooltips (set once, matched by name)
+
     List<Point3d> pts;
     List<Vector3d> vecs;
     List<Plane> plns;
@@ -219,5 +221,34 @@ public class Script_Instance : GH_ScriptInstance
     Pt = pts;
     Vec = vecs;
     Pln = plns;
+  }
+
+  // ---------------------------------------------------------------- pin tooltips
+  private bool _pinTipsSet = false;
+
+  private void SetPinTips()
+  {
+    if (_pinTipsSet || Component == null) return;
+    _pinTipsSet = true;
+    TipPin(Component.Params.Input, "Crv", "A polyline (a list works; you get one branch per curve)");
+    TipPin(Component.Params.Output, "Pt", "The vertex points.");
+    TipPin(Component.Params.Output, "Vec", "The bisector vector at each vertex (length 1)");
+    TipPin(Component.Params.Output, "Pln", "A plane at each vertex.");
+  }
+
+  // Match pins by Name (the script variable), fall back to NickName.
+  // Only NickName/Description are changed - never Name.
+  private void TipPin(System.Collections.Generic.IList<Grasshopper.Kernel.IGH_Param> ps, string name, string tip)
+  {
+    if (ps == null) return;
+    Grasshopper.Kernel.IGH_Param hit = null;
+    foreach (Grasshopper.Kernel.IGH_Param p in ps)
+      if (string.Equals(p.Name, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null)
+      foreach (Grasshopper.Kernel.IGH_Param p in ps)
+        if (string.Equals(p.NickName, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null) return;
+    hit.NickName = name;
+    hit.Description = tip;
   }
 }
