@@ -74,9 +74,19 @@ public class Script_Instance : GH_ScriptInstance
 
   private void SetTip(System.Collections.Generic.IList<IGH_Param> ps, int i, string name, string tip)
   {
-    if (ps == null || i < 0 || i >= ps.Count) return;
-    ps[i].Name = name;
-    ps[i].NickName = name;
-    ps[i].Description = tip;
+    // Pins are matched by NAME (the script variable), not by position 'i':
+    // Rhino 8 script components can have an extra "out" pin first, which
+    // shifted position-based tooltips onto the wrong pins. Name is never
+    // changed (it is the script variable) - only NickName and Description.
+    if (ps == null) return;
+    IGH_Param hit = null;
+    foreach (IGH_Param p in ps)
+      if (string.Equals(p.Name, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null)
+      foreach (IGH_Param p in ps)
+        if (string.Equals(p.NickName, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null) return;
+    hit.NickName = name;
+    hit.Description = tip;
   }
 }
