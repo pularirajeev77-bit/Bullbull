@@ -24,6 +24,8 @@ public class Script_Instance : GH_ScriptInstance
 		ref object Width,
 		ref object Height)
     {
+    SetPinTips();   // pin tooltips (set once, matched by name)
+
         // 1. Set Component Metadata (Rhino 8 Native)
         // Check prevents unnecessary UI refreshes which can disrupt data tree flows
         if (this.Component != null && this.Component.Message != "Part Size v2.0")
@@ -139,4 +141,33 @@ public class Script_Instance : GH_ScriptInstance
 
         return tree;
     }
+
+  // ---------------------------------------------------------------- pin tooltips
+  private bool _pinTipsSet = false;
+
+  private void SetPinTips()
+  {
+    if (_pinTipsSet || Component == null) return;
+    _pinTipsSet = true;
+    TipPin(Component.Params.Input, "Box", "The box(es) to measure (item, list or tree)");
+    TipPin(Component.Params.Output, "Length", "The larger of the two base edges.");
+    TipPin(Component.Params.Output, "Width", "The smaller of the two base edges.");
+    TipPin(Component.Params.Output, "Height", "The box height (its Z size in the box's own frame)");
+  }
+
+  // Match pins by Name (the script variable), fall back to NickName.
+  // Only NickName/Description are changed - never Name.
+  private void TipPin(System.Collections.Generic.IList<Grasshopper.Kernel.IGH_Param> ps, string name, string tip)
+  {
+    if (ps == null) return;
+    Grasshopper.Kernel.IGH_Param hit = null;
+    foreach (Grasshopper.Kernel.IGH_Param p in ps)
+      if (string.Equals(p.Name, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null)
+      foreach (Grasshopper.Kernel.IGH_Param p in ps)
+        if (string.Equals(p.NickName, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null) return;
+    hit.NickName = name;
+    hit.Description = tip;
+  }
 }
