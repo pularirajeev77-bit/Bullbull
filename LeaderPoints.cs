@@ -18,6 +18,8 @@ public class Script_Instance : GH_ScriptInstance
 		ref object pts)
 
     {
+    SetPinTips();   // pin tooltips (set once, matched by name)
+
         // Set Component Metadata (Rhino 8 feature)
         Component.Message = "Leader Points";
         Component.NickName = "Leader Points";
@@ -79,4 +81,35 @@ public class Script_Instance : GH_ScriptInstance
                 "Error in LeaderPoints: " + ex.Message);
         }
     }
+
+  // ---------------------------------------------------------------- pin tooltips
+  private bool _pinTipsSet = false;
+
+  private void SetPinTips()
+  {
+    if (_pinTipsSet || Component == null) return;
+    _pinTipsSet = true;
+    TipPin(Component.Params.Input, "plane", "Where the leader starts, and its orientation.");
+    TipPin(Component.Params.Input, "leader_length", "Distance from origin to the elbow.");
+    TipPin(Component.Params.Input, "parameter", "Direction of the elbow, as a fraction of a full turn: 0 = plane X direction, 0.25 = plane Y, 0.5 = −X, 0.75 = −Y.");
+    TipPin(Component.Params.Input, "landing_leg", "Length of the landing leg.");
+    TipPin(Component.Params.Output, "plcrv", "The leader as one polyline.");
+    TipPin(Component.Params.Output, "pts", "Its 3 points: origin, elbow, end of landing leg.");
+  }
+
+  // Match pins by Name (the script variable), fall back to NickName.
+  // Only NickName/Description are changed - never Name.
+  private void TipPin(System.Collections.Generic.IList<Grasshopper.Kernel.IGH_Param> ps, string name, string tip)
+  {
+    if (ps == null) return;
+    Grasshopper.Kernel.IGH_Param hit = null;
+    foreach (Grasshopper.Kernel.IGH_Param p in ps)
+      if (string.Equals(p.Name, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null)
+      foreach (Grasshopper.Kernel.IGH_Param p in ps)
+        if (string.Equals(p.NickName, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null) return;
+    hit.NickName = name;
+    hit.Description = tip;
+  }
 }

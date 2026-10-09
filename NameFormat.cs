@@ -11,6 +11,8 @@ public class Script_Instance : GH_ScriptInstance
 		List<object> Sf,
 		ref object T) // Output list
   {
+    SetPinTips();   // pin tooltips (set once, matched by name)
+
     // Set Component Metadata (Rhino 8 feature)
         Component.Message = "Name-Format v2.0";
         Component.NickName = "Name-Format";
@@ -68,5 +70,36 @@ public class Script_Instance : GH_ScriptInstance
 
     // --- Output ---
     T = result;
+  }
+
+  // ---------------------------------------------------------------- pin tooltips
+  private bool _pinTipsSet = false;
+
+  private void SetPinTips()
+  {
+    if (_pinTipsSet || Component == null) return;
+    _pinTipsSet = true;
+    TipPin(Component.Params.Input, "Pr", "Prefix text. Name *i* uses prefix *i*; if the list is shorter, the last prefix is reused.");
+    TipPin(Component.Params.Input, "Sn", "Start number.");
+    TipPin(Component.Params.Input, "Ct", "How many names to make.");
+    TipPin(Component.Params.Input, "Pn", "Pad digits — total width of the number, filled with zeros.");
+    TipPin(Component.Params.Input, "Sf", "Suffix text, matched to names like Pr.");
+    TipPin(Component.Params.Output, "T", "The list of names.");
+  }
+
+  // Match pins by Name (the script variable), fall back to NickName.
+  // Only NickName/Description are changed - never Name.
+  private void TipPin(System.Collections.Generic.IList<Grasshopper.Kernel.IGH_Param> ps, string name, string tip)
+  {
+    if (ps == null) return;
+    Grasshopper.Kernel.IGH_Param hit = null;
+    foreach (Grasshopper.Kernel.IGH_Param p in ps)
+      if (string.Equals(p.Name, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null)
+      foreach (Grasshopper.Kernel.IGH_Param p in ps)
+        if (string.Equals(p.NickName, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null) return;
+    hit.NickName = name;
+    hit.Description = tip;
   }
 }

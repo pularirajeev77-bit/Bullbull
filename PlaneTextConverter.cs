@@ -15,6 +15,8 @@ public class Script_Instance : GH_ScriptInstance
 		ref object Text,
 		ref object Plane)
   {
+    SetPinTips();   // pin tooltips (set once, matched by name)
+
     // Set Component Metadata for Rhino 8
         Component.Message = "Plane><Text";
         Component.NickName = "Plane><Text";
@@ -97,5 +99,34 @@ public class Script_Instance : GH_ScriptInstance
     // --- 3. Outputs ---
     Text  = textOut;
     Plane = planeOut;
+  }
+
+  // ---------------------------------------------------------------- pin tooltips
+  private bool _pinTipsSet = false;
+
+  private void SetPinTips()
+  {
+    if (_pinTipsSet || Component == null) return;
+    _pinTipsSet = true;
+    TipPin(Component.Params.Input, "Pln", "Planes to turn into text.");
+    TipPin(Component.Params.Input, "Txt", "Texts to turn back into planes.");
+    TipPin(Component.Params.Output, "Text", "One text per plane.");
+    TipPin(Component.Params.Output, "Plane", "One plane per valid text.");
+  }
+
+  // Match pins by Name (the script variable), fall back to NickName.
+  // Only NickName/Description are changed - never Name.
+  private void TipPin(System.Collections.Generic.IList<Grasshopper.Kernel.IGH_Param> ps, string name, string tip)
+  {
+    if (ps == null) return;
+    Grasshopper.Kernel.IGH_Param hit = null;
+    foreach (Grasshopper.Kernel.IGH_Param p in ps)
+      if (string.Equals(p.Name, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null)
+      foreach (Grasshopper.Kernel.IGH_Param p in ps)
+        if (string.Equals(p.NickName, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
+    if (hit == null) return;
+    hit.NickName = name;
+    hit.Description = tip;
   }
 }
