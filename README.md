@@ -2,7 +2,23 @@
 
 C# script components for **Rhino 8 Grasshopper**: layout (page view) tools.
 
-Other branches: see the [`main`](https://github.com/pularirajeev77-bit/Bullbull/tree/main) overview.
+Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEXT) &middot;
+[`Vector`](https://github.com/pularirajeev77-bit/Bullbull/tree/Vector) &middot;
+[`curves`](https://github.com/pularirajeev77-bit/Bullbull/tree/curves) &middot;
+[`utility`](https://github.com/pularirajeev77-bit/Bullbull/tree/utility) &middot;
+[`point`](https://github.com/pularirajeev77-bit/Bullbull/tree/point) &middot;
+[`surface`](https://github.com/pularirajeev77-bit/Bullbull/tree/surface) &middot;
+[`Plane`](https://github.com/pularirajeev77-bit/Bullbull/tree/Plane) &middot;
+[`Layers`](https://github.com/pularirajeev77-bit/Bullbull/tree/Layers) &middot;
+[`display`](https://github.com/pularirajeev77-bit/Bullbull/tree/display) &middot;
+[`SpaceFrame`](https://github.com/pularirajeev77-bit/Bullbull/tree/SpaceFrame) &middot;
+[`Creation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Creation) &middot;
+[`Tree`](https://github.com/pularirajeev77-bit/Bullbull/tree/Tree) &middot;
+[`TitleBlock`](https://github.com/pularirajeev77-bit/Bullbull/tree/TitleBlock) &middot;
+[`intersect`](https://github.com/pularirajeev77-bit/Bullbull/tree/intersect) &middot;
+[`shape`](https://github.com/pularirajeev77-bit/Bullbull/tree/shape) &middot;
+[`grid`](https://github.com/pularirajeev77-bit/Bullbull/tree/grid) &middot;
+[`main`](https://github.com/pularirajeev77-bit/Bullbull/tree/main) (overview)
 
 ## How to use a script
 
