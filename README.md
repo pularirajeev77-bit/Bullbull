@@ -24,6 +24,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`intersect`](https://github.com/pularirajeev77-bit/Bullbull/tree/intersect) | CrvPlaneInt, DirFilter, CoplanarFilter |
 | [`shape`](https://github.com/pularirajeev77-bit/Bullbull/tree/shape) | Hybrid Interlock |
 | [`grid`](https://github.com/pularirajeev77-bit/Bullbull/tree/grid) | GridBoundList, CrvIntGrid |
+| [`subd`](https://github.com/pularirajeev77-bit/Bullbull/tree/subd) | SubDCrease |
 | [`layout`](https://github.com/pularirajeev77-bit/Bullbull/tree/layout) | LFT |
 
 ## All components
@@ -105,6 +106,7 @@ topic into branches — switch branch to see the code and full instructions.
 | Hybrid Interlock | `shape` | Interlocking (egg-crate / lap) notches between crossing members, any orientation, solids or surfaces |
 | GridBoundList | `grid` | U/V grid of lines inside a closed boundary with repeating spacing lists, plus grid nodes |
 | CrvIntGrid | `grid` | Curves in two directions -> ordered point grid (like PanelingTools ptIntersect) with a gap tolerance |
+| SubDCrease | `subd` | Creases or smooths chosen SubD edges by edge index |
 | LFT | `layout` | Creates new layouts from a list of names by copying a template layout (page size, details, title block) |
 
 ## How to use a script
