@@ -42,7 +42,7 @@ topic into branches — switch branch to see the code and full instructions.
 | Leader Points | `TEXT` | Leader line with a landing leg, from a plane |
 | Format-RealNumbers | `TEXT` | Number -> text with exactly 14 decimals (exact value, no e-notation) |
 | Bisect Frame | `Vector` | Point, bisector vector and plane at every polyline vertex |
-| CenterDiv | `curves` | Divides a curve symmetrically from its middle |
+| CenterDiv | `curves` | Divides curves symmetrically from their middle - lists, lists of lists and trees |
 | PVL | `curves` | Lines from a point, a direction and a length |
 | CrvClass | `curves` | Sorts curves by type: line, polyline, arc, circle, ellipse … |
 | IntAng | `curves` | Finds the sharp corners of a polyline |
