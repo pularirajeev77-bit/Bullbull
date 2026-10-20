@@ -24,7 +24,7 @@ and keeps your list/tree shape) · **list** = the whole list at once ·
 
 | Component | File | What it does |
 |---|---|---|
-| [CenterDiv](#centerdiv) | `CenterDivide.cs` | Divides a curve symmetrically from its middle |
+| [CenterDiv](#centerdiv) | `CenterDivide.cs` | Divides curves symmetrically from their middle - works on lists, lists of lists and trees |
 | [PVL](#pvl) | `PVL.cs` | Lines from a point, a direction and a length |
 | [CrvClass](#crvclass) | `CurveClassifier.cs` | Sorts curves by type: line, polyline, arc, circle, ellipse … |
 | [IntAng](#intang) | `InternalAngleFilter.cs` | Finds the sharp corners of a polyline |
@@ -45,46 +45,52 @@ middle of the curve**. The start and end points are always included.
 
 | Input | Access | Meaning |
 |---|---|---|
-| `Curve` | tree | The curves to divide - a single curve, a list, a list of lists or any tree |
+| `Curves` | tree | The curves to divide - one curve, a list, a list of lists or any tree |
 | `Distance` | tree | Spacing between points. One per curve; if the list is shorter, the last value is reused. Missing or ≤ 0 → 1 |
-| `Toggle` | tree | What happens at the middle (see below). One per curve, last value reused |
+| `PointAtMiddle` | tree | Optional. What happens at the middle (see below). One per curve, last value reused |
 
 | Output | Meaning |
 |---|---|
-| `OUT` | The points, one branch per curve, in order from start to end. Path = `{input branch ; curve index}` |
+| `Points` | Division points, one branch per curve, in order from start to end. Path = `{input branch ; curve index}` |
 
-**Trees and lists of lists:** every input branch keeps its own place in the output, one level
-deeper per curve - the same structure Grasshopper's *Divide Curve* gives:
+**The three `PointAtMiddle` modes** (D = Distance)
 
-| `Curve` input | `OUT` branches |
-|---|---|
-| One curve | `{0;0}` |
-| A list of 3 curves `{0}` | `{0;0}`, `{0;1}`, `{0;2}` |
-| Two lists `{0}` (2 curves), `{1}` (3 curves) | `{0;0}`, `{0;1}`, `{1;0}`, `{1;1}`, `{1;2}` |
-
-`Distance` and `Toggle` are matched **per branch**: the branch with the same path is used; if there
-is none, their first branch is used - so a single number or a flat list applies to every branch.
-
-**The three Toggle modes** (D = Distance)
-
-| Toggle | Points from the middle outward |
+| PointAtMiddle | Points from the middle outward |
 |---|---|
 | **True** | A point **at** the middle, then ±D, ±2D, ±3D … |
 | **False** | A **gap** at the middle: ±D/2, ±3D/2, ±5D/2 … |
 | **Unplugged** | Auto: picks True or False so that both end pieces are between ½D and 1D long (no tiny slivers at the ends) |
 
-`Toggle` also accepts `1`/`0`, `yes`/`no`, `on`/`off`.
+`PointAtMiddle` also accepts `1`/`0`, `yes`/`no`, `on`/`off`.
+
+**Trees and lists of lists:** every input branch keeps its own place in the output, one level
+deeper per curve - the same structure Grasshopper's *Divide Curve* gives:
+
+| `Curves` input | `Points` branches |
+|---|---|
+| One curve | `{0;0}` |
+| A list of 3 curves `{0}` | `{0;0}`, `{0;1}`, `{0;2}` |
+| Two lists `{0}` (2 curves), `{1}` (3 curves) | `{0;0}`, `{0;1}`, `{1;0}`, `{1;1}`, `{1;2}` |
+
+`Distance` and `PointAtMiddle` are matched **per branch**: the branch with the same path is used;
+if there is none, their first branch is used - so a single value or a flat list applies to every branch.
 
 **Good to know**
 - The middle is the true half-way point by length, on lines, polylines and NURBS alike.
 - Spacing is measured **along the curve**. On a bend, the straight-line
   distance between two points is a little shorter than `Distance`.
-- **v2.1:** trees and lists of lists used to come out as one mixed-up list. With list access
-  Grasshopper ran the script once per branch, and every run wrote its points to `{0}`, `{1}`, …
-  again, so branches from different inputs landed on top of each other. The inputs are now tree
-  access and the output path is `{input branch ; curve index}`. Paste the new code into an
-  existing component and check that the three inputs show tree access.
+- A flat list of curves now gives `{0;0}`, `{0;1}` … (one level deeper than before). Add
+  *Simplify Tree* if a downstream component expects `{0}`, `{1}` ….
 
+**v2.1** (2026-10-20)
+- **Trees / lists of lists:** they came out as one mixed-up list. With list access Grasshopper ran
+  the script once per branch, and every run wrote its points to `{0}`, `{1}`, … again, so branches
+  from different inputs landed on top of each other. Inputs are now tree access and the output path
+  is `{input branch ; curve index}`.
+- **Renamed:** `Curve` → `Curves`, `Toggle` → `PointAtMiddle`, `OUT` → `Points` (`Distance` kept).
+  Tooltips updated to match.
+- Paste the new code into the existing component, then **re-wire** the renamed pins and check that
+  all three inputs show tree access.
 ---
 
 ## PVL
