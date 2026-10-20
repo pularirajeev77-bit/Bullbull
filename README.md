@@ -38,20 +38,32 @@ and keeps your list/tree shape) · **list** = the whole list at once ·
 
 ## CenterDiv
 
-**File:** `CenterDivide.cs`
+**File:** `CenterDivide.cs` &middot; Component name: *Center Divide* &middot; v2.1
 
 Divides each curve into points spaced `Distance` apart, **symmetric about the
 middle of the curve**. The start and end points are always included.
 
 | Input | Access | Meaning |
 |---|---|---|
-| `Curve` | list | The curves to divide |
-| `Distance` | list | Spacing between points. One per curve; if the list is shorter, the last value is reused. Missing or ≤ 0 → 1 |
-| `Toggle` | list | What happens at the middle (see below). One per curve, last value reused |
+| `Curve` | tree | The curves to divide - a single curve, a list, a list of lists or any tree |
+| `Distance` | tree | Spacing between points. One per curve; if the list is shorter, the last value is reused. Missing or ≤ 0 → 1 |
+| `Toggle` | tree | What happens at the middle (see below). One per curve, last value reused |
 
 | Output | Meaning |
 |---|---|
-| `OUT` | The points, one branch per curve, in order from start to end |
+| `OUT` | The points, one branch per curve, in order from start to end. Path = `{input branch ; curve index}` |
+
+**Trees and lists of lists:** every input branch keeps its own place in the output, one level
+deeper per curve - the same structure Grasshopper's *Divide Curve* gives:
+
+| `Curve` input | `OUT` branches |
+|---|---|
+| One curve | `{0;0}` |
+| A list of 3 curves `{0}` | `{0;0}`, `{0;1}`, `{0;2}` |
+| Two lists `{0}` (2 curves), `{1}` (3 curves) | `{0;0}`, `{0;1}`, `{1;0}`, `{1;1}`, `{1;2}` |
+
+`Distance` and `Toggle` are matched **per branch**: the branch with the same path is used; if there
+is none, their first branch is used - so a single number or a flat list applies to every branch.
 
 **The three Toggle modes** (D = Distance)
 
@@ -67,6 +79,11 @@ middle of the curve**. The start and end points are always included.
 - The middle is the true half-way point by length, on lines, polylines and NURBS alike.
 - Spacing is measured **along the curve**. On a bend, the straight-line
   distance between two points is a little shorter than `Distance`.
+- **v2.1:** trees and lists of lists used to come out as one mixed-up list. With list access
+  Grasshopper ran the script once per branch, and every run wrote its points to `{0}`, `{1}`, …
+  again, so branches from different inputs landed on top of each other. The inputs are now tree
+  access and the output path is `{input branch ; curve index}`. Paste the new code into an
+  existing component and check that the three inputs show tree access.
 
 ---
 

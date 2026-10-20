@@ -1,8 +1,15 @@
 /*
   Author: Rajeev Pulari + ChatGPT
   Rhino 8 | Grasshopper C#
-  Version: 2026.04.05
+  Version: 2.1 (2026-10-20)
   Component: CenterDivide
+
+  v2.1: Curve, Distance and Toggle are TREE access. Lists of lists / trees of curves
+        used to come out as one flat-looking list: with list access Grasshopper ran
+        the script once per branch and every run wrote to {0},{1},... again, so the
+        branches of different inputs piled on top of each other. Output path is now
+        {input branch ; curve index} (like Grasshopper's Divide Curve); Distance and
+        Toggle are matched per branch.
   Description:
     Divide curve from middle with 3 toggle modes:
       • Unplugged → Auto (odd/even division logic)
@@ -22,45 +29,50 @@ using Grasshopper.Kernel.Data;
 public class Script_Instance : GH_ScriptInstance
 {
     private void RunScript(
-		List<Curve> Curve,
-		List<double> Distance,
-		List<object> Toggle,
+		DataTree<Curve> Curve,
+		DataTree<double> Distance,
+		DataTree<object> Toggle,
 		ref object OUT)
     {
     SetPinTips();   // pin tooltips (set once, matched by name)
 
         // 1. Set Component Metadata (Rhino 8 Native)
-        this.Component.Message = "Center Divide v2.0";
+        this.Component.Message = "Center Divide v2.1";
         this.Component.NickName = "CenterDiv";
 
-        // 2. Output: one branch per input curve, so points stay grouped by
-        //    the curve they came from (a flat list mixed all curves together)
+        // 2. Output: one branch per input curve, {input branch ; curve index},
+        //    so lists, lists of lists and trees keep their structure.
         var tree = new DataTree<Point3d>();
 
         try
         {
-            if (Curve == null || Curve.Count == 0)
+            if (Curve == null || Curve.DataCount == 0)
             {
                 OUT = tree;
                 return;
             }
 
-            // Toggle is list access: unplugged gives an empty list -> Auto.
-            // (As item access, wiring several toggles made Grasshopper run
-            // the whole component once per toggle, duplicating all output.)
-            List<bool> toggleList = ExtractBoolList(Toggle);
+          for (int b = 0; b < Curve.BranchCount; b++)
+          {
+            GH_Path inPath = Curve.Path(b);
+            List<Curve> curves = Curve.Branch(b);
 
-            for (int i = 0; i < Curve.Count; i++)
+            // Distance / Toggle: branch with the same path, else the first branch
+            // (one flat list then applies to every branch). Unplugged Toggle -> Auto.
+            List<double> distList = BranchFor(Distance, inPath);
+            List<bool> toggleList = ExtractBoolList(BranchFor(Toggle, inPath));
+
+            for (int i = 0; i < curves.Count; i++)
             {
-                var path = new GH_Path(i);
+                var path = inPath.AppendElement(i);
                 tree.EnsurePath(path); // keep an (empty) branch for null curves
-                Curve crv = Curve[i];
+                Curve crv = curves[i];
                 if (crv == null) continue;
 
                 // --- Distance per curve (reuse last value, Grasshopper-style) ---
                 double dist = 1.0;
-                if (Distance != null && Distance.Count > 0)
-                    dist = SafePos(Distance[Math.Min(i, Distance.Count - 1)], 1.0);
+                if (distList.Count > 0)
+                    dist = SafePos(distList[Math.Min(i, distList.Count - 1)], 1.0);
 
                 // --- Toggle logic (3 modes) ---
                 bool tog;
@@ -80,6 +92,7 @@ public class Script_Instance : GH_ScriptInstance
 
                 tree.AddRange(ProcessCurve(crv, dist, tog), path);
             }
+          }
         }
         catch (Exception ex)
         {
@@ -93,6 +106,14 @@ public class Script_Instance : GH_ScriptInstance
     }
 
     // --- Helpers ---
+
+    // Branch with the same path, else the first branch, else empty.
+    private static List<T> BranchFor<T>(DataTree<T> t, GH_Path path)
+    {
+        if (t == null || t.BranchCount == 0) return new List<T>();
+        if (t.PathExists(path)) return t.Branch(path);
+        return t.Branch(0);
+    }
 
     private List<bool> ExtractBoolList(IList toggle)
     {
@@ -208,10 +229,13 @@ public class Script_Instance : GH_ScriptInstance
   {
     if (_pinTipsSet || Component == null) return;
     _pinTipsSet = true;
-    TipPin(Component.Params.Input, "Curve", "The curves to divide.");
-    TipPin(Component.Params.Input, "Distance", "Spacing between points. One per curve; if the list is shorter, the last value is reused. Missing or ≤ 0 → 1.");
-    TipPin(Component.Params.Input, "Toggle", "Middle mode, one per curve (last value reused): True = a point at the middle, False = a gap at the middle (±D/2), unplugged = auto (no short end pieces). Also accepts 1/0, yes/no, on/off.");
-    TipPin(Component.Params.Output, "OUT", "The points, one branch per curve, in order from start to end.");
+    Component.Name = "Center Divide";
+    Component.Description = "Divides curves into points spaced Distance apart, symmetric about each curve's middle. "
+                           + "Works on items, lists and trees; output {branch;curve}. Rajeev Pulari, v2.1.";
+    TipPin(Component.Params.Input, "Curve", "The curves to divide - item, list, list of lists or tree.");
+    TipPin(Component.Params.Input, "Distance", "Spacing between points, per branch (same path, else the first branch). One per curve; a shorter list reuses its last value. Missing or ≤ 0 → 1.");
+    TipPin(Component.Params.Input, "Toggle", "Middle mode per branch, one per curve (last value reused): True = a point at the middle, False = a gap at the middle (±D/2), unplugged = auto (no short end pieces). Also accepts 1/0, yes/no, on/off.");
+    TipPin(Component.Params.Output, "OUT", "The points, one branch per curve: {input branch ; curve index}, in order from start to end.");
   }
 
   // Match pins by Name (the script variable), fall back to NickName.
