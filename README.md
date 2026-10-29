@@ -39,7 +39,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 
 ## LFT
 
-**File:** `LayoutFromTemplate.cs` &middot; Component name: *Layout From Template* &middot; v2.2
+**File:** `LayoutFromTemplate.cs` &middot; Component name: *Layout From Template* &middot; v2.3
 
 **Creates one new layout per name**, each a copy of a **template layout**: page size,
 detail views (position, view, scale, projection lock, display mode, layer) and all page-space
@@ -67,6 +67,9 @@ either way, only the layouts in `Names` are added.
 | `A1, A3` | `GA-01, DT-01, DT-02` (flat list) | `GA-01`←`A1`, `DT-01`←`A3`, `DT-02`←`A3` - last template reused |
 | `A1, A3` | tree `{0}` `GA-01, GA-02` · `{1}` `DT-01, DT-02, DT-03` | branch `{0}` ← `A1`, branch `{1}` ← `A3` |
 | `A1` | any tree | every name from `A1` |
+
+The component reads **all** templates and names at once, whatever access the pins are set to, so an
+older component whose `Template` pin is still *item* access works the same.
 
 A shorter `Template` list reuses its last template. Templates left over (more templates than names or
 branches) are not used - the component shows a remark. The `Report` lists each new layout with its template.
@@ -97,7 +100,10 @@ How it works:
   imported at all - so `Run` can stay on.
 - With `TemplateFile`, the template is always taken from that file. A layout with the same name in the
   current file is never used or changed.
-- If ImportLayout doesn't accept the layout name, put its **number** in `Template` (1 = first layout of that file).
+- Each imported layout is **checked by name**. If Rhino's ImportLayout brings a different layout (it may
+  ignore a name), that one is removed and the file is searched layout by layout until the name matches.
+  The `Report` shows which layout every template resolved to, e.g. `Template 'A3' -> layout 3 'A3'`.
+- A number in `Template` (1 = first layout of that file) imports that layout directly.
 - Creating the layouts is one **Undo** step (the import is its own step before it).
 - Details copy the template detail's **whole view** - camera, projection and zoom - so the scale is the
   same as the template's.
@@ -105,6 +111,15 @@ How it works:
 - Not compiled here (no Rhino) - test in Grasshopper, first on a copy of the file.
 
 ### Changelog
+
+**v2.3** (2026-10-29)
+- **Fix - all names came from the first template.** When the pins kept an older access (`Template` = item),
+  Grasshopper ran the script once per template and the first run made every name from template 1.
+  All templates and names are now read straight from the inputs in a single run.
+- **Fix - wrong layout imported.** ImportLayout may ignore the layout name and bring the same layout
+  each time. The imported layout's name is now checked; if it is not the one asked for, it is removed
+  and the file is searched layout by layout.
+- `Report` shows which layout each template resolved to.
 
 **v2.2** (2026-10-29)
 - `Template` is a **list** and `Names` a **tree**: several templates to several names - item by item for

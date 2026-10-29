@@ -2,7 +2,7 @@
 /*
   Author      : rajeev pulari / Claude
   Platform    : Rhino 8 | Grasshopper C#
-  Version     : 2.2  (2026-10-29)
+  Version     : 2.3  (2026-10-29)
   Component   : Layout From Template
   NickName    : LFT
   Description : Creates new layouts by copying template layouts: page size, detail
@@ -26,6 +26,15 @@
   Output:
     Report       : string - templates used, then created / skipped / failed per name
 
+  v2.3
+    - Fix: every name was made from the FIRST template. If the pins kept the
+      access of an older version (Template = item), Grasshopper ran the script once
+      per template and the first run made all names from template 1. All templates
+      and names are now read straight from the inputs (any access) in ONE run.
+    - Fix: ImportLayout may ignore the layout name and bring the same layout every
+      time. The imported layout's name is now checked; if it is not the requested
+      one it is removed and the file is searched layout by layout (1, 2, 3 ...).
+    - Report shows which layout each template resolved to.
   v2.2
     - Template is a list and Names a tree: copy several templates to several names
       (pairing rules above). Each template is imported once; all are removed after.
@@ -63,6 +72,10 @@ public class Script_Instance : GH_ScriptInstance
     {
         SetMetadata();
 
+        // All templates and names are read from the inputs below, so the work is done
+        // once - later iterations (pins left at item / list access) do nothing.
+        if (Iteration > 0) { Report = _lastReport ?? ""; return; }
+
         if (!Run)
         {
             Report = _lastReport ?? "Toggle Run to create the layouts.";
@@ -72,8 +85,9 @@ public class Script_Instance : GH_ScriptInstance
         RhinoDoc doc = RhinoDocument ?? RhinoDoc.ActiveDoc;
         if (doc == null) { Fail(ref Report, "No active Rhino document."); return; }
 
-        var templates = (Template ?? new List<string>())
+        var templates = ReadAllStrings("Template", Template)
             .Select(t => t == null ? "" : t.Trim()).Where(t => t.Length > 0).ToList();
+        Names = ReadTree("Names", Names);
         if (templates.Count == 0) { Warn(ref Report, "Template: give the name(s) (or numbers) of the template layout(s)."); return; }
         if (Names == null || Names.DataCount == 0) { Warn(ref Report, "Names: give the names of the new layouts."); return; }
 
@@ -243,7 +257,7 @@ public class Script_Instance : GH_ScriptInstance
     {
         report.AppendLine("Layouts created : " + made);
         if (made > 0) RhinoDoc.ActiveDoc?.Views.Redraw();
-        Component.Message = "Layout From Template v2.2 | " + made + " new";
+        Component.Message = "Layout From Template v2.3 | " + made + " new";
         _lastReport = report.ToString();
         Report = _lastReport;
     }
@@ -269,31 +283,110 @@ public class Script_Instance : GH_ScriptInstance
 
     // Import ONE layout from another .3dm with Rhino's ImportLayout command.
     // Brings the layout's page objects and details (and, as Rhino does, that file's layers).
+    // The result is checked: by name first; if Rhino brings a different layout, the file is
+    // searched layout by layout (by number, which ImportLayout always accepts).
     private RhinoPageView ImportTemplate(RhinoDoc doc, string path, string key, StringBuilder report)
     {
-        var before = new HashSet<Guid>(doc.Views.GetPageViews().Select(v => v.MainViewport.Id));
+        string file = Path.GetFileName(path);
+        int number;
+        bool byNumber = int.TryParse(key, out number);
 
-        string cmd = "_-ImportLayout \"" + path + "\" \"" + key + "\" _Enter";
-        bool ok = RhinoApp.RunScript(cmd, false);
-
-        List<RhinoPageView> added = doc.Views.GetPageViews().Where(v => !before.Contains(v.MainViewport.Id)).ToList();
-        if (added.Count == 0)
+        if (byNumber)
         {
-            report.AppendLine("ImportLayout found nothing for '" + key + "'" + (ok ? "" : " (command cancelled)") + ".");
-            return null;
+            List<RhinoPageView> got = RunImport(doc, path, key);
+            if (got.Count == 0) { report.AppendLine("No layout number " + key + " in " + file + "."); return null; }
+            RhinoPageView p = got[0];
+            foreach (var extra in got.Skip(1)) RemovePage(doc, extra);
+            report.AppendLine("Template " + key + " -> layout '" + p.PageName + "' from " + file + ".");
+            return p;
         }
 
-        // The one we asked for: same name (Rhino may add a suffix if the name is taken), else the first new one
-        RhinoPageView page = added.FirstOrDefault(v => string.Equals(v.PageName, key, StringComparison.OrdinalIgnoreCase))
-                          ?? added.FirstOrDefault(v => v.PageName.StartsWith(key, StringComparison.OrdinalIgnoreCase))
-                          ?? added[0];
+        // 1) by name
+        List<RhinoPageView> added = RunImport(doc, path, "\"" + key + "\"");
+        RhinoPageView page = added.FirstOrDefault(v => NameIs(v.PageName, key));
+        foreach (var other in added.Where(v => page == null || v.MainViewport.Id != page.MainViewport.Id).ToList())
+            RemovePage(doc, other);
+        if (page != null)
+        {
+            report.AppendLine("Template '" + key + "' -> layout '" + page.PageName + "' from " + file + ".");
+            return page;
+        }
 
-        // Anything else that came in is not wanted - remove it straight away
-        foreach (RhinoPageView extra in added.Where(v => v.MainViewport.Id != page.MainViewport.Id).ToList())
-            RemovePage(doc, extra);
+        // 2) layout by layout until the name matches
+        for (int k = 1; k <= 200; k++)
+        {
+            List<RhinoPageView> got = RunImport(doc, path, k.ToString());
+            if (got.Count == 0) break;                         // no more layouts in that file
+            RhinoPageView hit = got.FirstOrDefault(v => NameIs(v.PageName, key));
+            foreach (var other in got.Where(v => hit == null || v.MainViewport.Id != hit.MainViewport.Id).ToList())
+                RemovePage(doc, other);
+            if (hit != null)
+            {
+                report.AppendLine("Template '" + key + "' -> layout " + k + " '" + hit.PageName + "' from " + file + ".");
+                return hit;
+            }
+        }
 
-        report.AppendLine("Template: layout '" + key + "' taken from " + Path.GetFileName(path) + ".");
-        return page;
+        report.AppendLine("No layout named '" + key + "' found in " + file + ".");
+        return null;
+    }
+
+    // Runs ImportLayout and returns the layouts it added
+    private static List<RhinoPageView> RunImport(RhinoDoc doc, string path, string layoutArg)
+    {
+        var before = new HashSet<Guid>(doc.Views.GetPageViews().Select(v => v.MainViewport.Id));
+        RhinoApp.RunScript("_-ImportLayout \"" + path + "\" " + layoutArg + " _Enter", false);
+        return doc.Views.GetPageViews().Where(v => !before.Contains(v.MainViewport.Id)).ToList();
+    }
+
+    // Same name, or the name with a number Rhino appends when the name is taken ("A1 (2)", "A1 2")
+    private static bool NameIs(string pageName, string key)
+    {
+        if (string.Equals(pageName, key, StringComparison.OrdinalIgnoreCase)) return true;
+        return System.Text.RegularExpressions.Regex.IsMatch(pageName ?? "",
+            "^" + System.Text.RegularExpressions.Regex.Escape(key) + @"(\s*\(\d+\)|\s+\d+)$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    }
+
+    // ---- read inputs whatever their access (item / list / tree) -----------------
+
+    private IGH_Param FindInput(string name)
+    {
+        foreach (IGH_Param p in Component.Params.Input)
+            if (string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)) return p;
+        foreach (IGH_Param p in Component.Params.Input)
+            if (string.Equals(p.NickName, name, StringComparison.OrdinalIgnoreCase)) return p;
+        return null;
+    }
+
+    private List<string> ReadAllStrings(string name, List<string> fallback)
+    {
+        IGH_Param p = FindInput(name);
+        if (p == null) return fallback ?? new List<string>();
+        var list = new List<string>();
+        foreach (var goo in p.VolatileData.AllData(true))
+        {
+            string v;
+            if (GH_Convert.ToString(goo, out v, GH_Conversion.Both)) list.Add(v);
+        }
+        return list;
+    }
+
+    private DataTree<string> ReadTree(string name, DataTree<string> fallback)
+    {
+        IGH_Param p = FindInput(name);
+        if (p == null) return fallback;
+        var tree = new DataTree<string>();
+        foreach (GH_Path path in p.VolatileData.Paths)
+        {
+            tree.EnsurePath(path);
+            foreach (var goo in p.VolatileData.get_Branch(path))
+            {
+                string v;
+                if (goo != null && GH_Convert.ToString(goo, out v, GH_Conversion.Both)) tree.Add(v, path);
+            }
+        }
+        return tree;
     }
 
     // ---- clean-up of the imported templates --------------------------------------
@@ -394,10 +487,10 @@ public class Script_Instance : GH_ScriptInstance
 
         Component.Name = "Layout From Template";
         Component.NickName = "LFT";
-        Component.Message = "Layout From Template v2.2";
+        Component.Message = "Layout From Template v2.3";
         Component.Description =
             "Creates new layouts (Names, list or tree) from one or more template layouts - from this file, or picked " +
-            "from another .3dm (TemplateFile), where templates are only borrowed and removed again. Rajeev Pulari, v2.2.";
+            "from another .3dm (TemplateFile), where templates are only borrowed and removed again. Rajeev Pulari, v2.3.";
 
         SetTip(Component.Params.Input, "Run", "Toggle. Layouts are created while True; names that already exist are skipped (and nothing is imported), so re-running is safe.");
         SetTip(Component.Params.Input, "Template", "Template layout(s) - names (case-insensitive) or numbers (1 = first layout). One template: all names use it. Several: template i -> name i (flat list) or -> branch i (tree); a shorter list reuses its last item. With TemplateFile: layouts of THAT file.");
