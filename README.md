@@ -107,7 +107,7 @@ topic into branches — switch branch to see the code and full instructions.
 | GridBoundList | `grid` | U/V grid of lines inside a closed boundary with repeating spacing lists, plus grid nodes |
 | CrvIntGrid | `grid` | Curves in two directions -> ordered point grid (like PanelingTools ptIntersect) with a gap tolerance |
 | SubDCrease | `subd` | Creases or smooths chosen SubD edges by edge index |
-| LFT | `layout` | Creates new layouts from a list of names by copying a template layout (page size, details, title block) |
+| LFT | `layout` | Creates new layouts from a list of names by copying a template layout (page size, details, title block) - from this file or another Rhino file |
 
 ## How to use a script
 
