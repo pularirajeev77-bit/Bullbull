@@ -2,7 +2,7 @@
 /*
   Author      : rajeev pulari / Claude
   Platform    : Rhino 8 | Grasshopper C#
-  Version     : 2.3  (2026-10-29)
+  Version     : 2.4  (2026-10-29)
   Component   : Layout From Template
   NickName    : LFT
   Description : Creates new layouts by copying template layouts: page size, detail
@@ -26,6 +26,12 @@
   Output:
     Report       : string - templates used, then created / skipped / failed per name
 
+  v2.4
+    - Fix: names were lost. Detail views now get ALL attributes of the template
+      detail (object Name, colour, user text ...) - the name used to go only to the
+      detail's title. Objects imported from TemplateFile get their Name and user
+      text back from the .3dm itself when ImportLayout dropped them (matched by
+      object type and position on the page).
   v2.3
     - Fix: every name was made from the FIRST template. If the pins kept the
       access of an older version (Template = item), Grasshopper ran the script once
@@ -154,7 +160,7 @@ public class Script_Instance : GH_ScriptInstance
                 if (fromFile)
                 {
                     page = ImportTemplate(doc, path, key, report);
-                    if (page != null) imported.Add(page);
+                    if (page != null) { imported.Add(page); RestoreNames(doc, page, path, report); }
                     else report.AppendLine("Could not import template '" + key + "' from " + Path.GetFileName(path) +
                                            " - check the name, or give its number (1 = first layout in that file).");
                 }
@@ -232,6 +238,80 @@ public class Script_Instance : GH_ScriptInstance
 
     // <Custom additional code>
     private string _lastReport = null;
+
+    // ---- names lost by ImportLayout: take them back from the .3dm itself ----------
+
+    private class SrcInfo { public ObjectType Type; public BoundingBox Box; public string Name; public System.Collections.Specialized.NameValueCollection UserText; public bool Used; }
+    private string _indexPath = null;
+    private List<SrcInfo> _index = null;
+
+    private List<SrcInfo> PageObjectsOfFile(string path)
+    {
+        if (_index != null && string.Equals(_indexPath, path, StringComparison.OrdinalIgnoreCase))
+        {
+            foreach (var x in _index) x.Used = false;
+            return _index;
+        }
+        var list = new List<SrcInfo>();
+        Rhino.FileIO.File3dm f = Rhino.FileIO.File3dm.Read(path);
+        if (f != null)
+        {
+            using (f)
+            {
+                foreach (Rhino.FileIO.File3dmObject o in f.Objects)
+                {
+                    if (o.Attributes == null || o.Geometry == null) continue;
+                    if (o.Attributes.Space != ActiveSpace.PageSpace) continue;
+                    list.Add(new SrcInfo
+                    {
+                        Type = o.Geometry.ObjectType,
+                        Box = o.Geometry.GetBoundingBox(true),
+                        Name = o.Attributes.Name ?? "",
+                        UserText = o.Attributes.GetUserStrings()
+                    });
+                }
+            }
+        }
+        _indexPath = path; _index = list;
+        return list;
+    }
+
+    private static bool SameBox(BoundingBox a, BoundingBox b, double tol)
+    {
+        return a.IsValid && b.IsValid && a.Min.DistanceTo(b.Min) <= tol && a.Max.DistanceTo(b.Max) <= tol;
+    }
+
+    // Give imported page objects without a Name (or user text) the ones they have in the file
+    private void RestoreNames(RhinoDoc doc, RhinoPageView page, string path, StringBuilder report)
+    {
+        List<SrcInfo> src;
+        try { src = PageObjectsOfFile(path); }
+        catch (Exception ex) { report.AppendLine("Note: could not read " + Path.GetFileName(path) + " to check object names (" + ex.Message + ")."); return; }
+        if (src.Count == 0) return;
+
+        double tol = Math.Max(doc.PageAbsoluteTolerance, 1e-6) * 10;
+        int fixedNames = 0;
+        foreach (RhinoObject o in doc.Objects.Where(x => x.Attributes.ViewportId == page.MainViewport.Id).ToList())
+        {
+            bool noName = string.IsNullOrEmpty(o.Attributes.Name);
+            bool noText = o.Attributes.UserStringCount == 0;
+            if (!noName && !noText) continue;
+
+            BoundingBox bb = o.Geometry.GetBoundingBox(true);
+            SrcInfo hit = src.FirstOrDefault(x => !x.Used && x.Type == o.Geometry.ObjectType && SameBox(x.Box, bb, tol)
+                                                  && (x.Name.Length > 0 || (x.UserText != null && x.UserText.Count > 0)));
+            if (hit == null) continue;
+            hit.Used = true;
+
+            ObjectAttributes a = o.Attributes.Duplicate();
+            bool change = false;
+            if (noName && hit.Name.Length > 0) { a.Name = hit.Name; change = true; }
+            if (noText && hit.UserText != null)
+                foreach (string k in hit.UserText.AllKeys) { a.SetUserString(k, hit.UserText[k]); change = true; }
+            if (change && doc.Objects.ModifyAttributes(o.Id, a, true)) fixedNames++;
+        }
+        if (fixedNames > 0) report.AppendLine("Restored names / user text on " + fixedNames + " object(s) that ImportLayout dropped.");
+    }
     private bool _metaSet = false;
 
     private class TemplateContent
@@ -257,7 +337,7 @@ public class Script_Instance : GH_ScriptInstance
     {
         report.AppendLine("Layouts created : " + made);
         if (made > 0) RhinoDoc.ActiveDoc?.Views.Redraw();
-        Component.Message = "Layout From Template v2.3 | " + made + " new";
+        Component.Message = "Layout From Template v2.4 | " + made + " new";
         _lastReport = report.ToString();
         Report = _lastReport;
     }
@@ -462,8 +542,13 @@ public class Script_Instance : GH_ScriptInstance
 
         nd.DetailGeometry.IsProjectionLocked = sd.DetailGeometry.IsProjectionLocked;
         nd.CommitViewportChanges();
-        nd.Attributes.LayerIndex = sd.Attributes.LayerIndex;
-        nd.CommitChanges();
+
+        // All attributes of the template detail: object Name, layer, colour, user text ...
+        // (the name given to AddDetailView is only the detail's title)
+        ObjectAttributes a = sd.Attributes.Duplicate();
+        a.ViewportId = page.MainViewport.Id;
+        a.Space = ActiveSpace.PageSpace;
+        doc.Objects.ModifyAttributes(nd.Id, a, true);
     }
 
     // ---- messages + metadata ------------------------------------------------------
@@ -487,10 +572,10 @@ public class Script_Instance : GH_ScriptInstance
 
         Component.Name = "Layout From Template";
         Component.NickName = "LFT";
-        Component.Message = "Layout From Template v2.3";
+        Component.Message = "Layout From Template v2.4";
         Component.Description =
             "Creates new layouts (Names, list or tree) from one or more template layouts - from this file, or picked " +
-            "from another .3dm (TemplateFile), where templates are only borrowed and removed again. Rajeev Pulari, v2.3.";
+            "from another .3dm (TemplateFile), where templates are only borrowed and removed again. Rajeev Pulari, v2.4.";
 
         SetTip(Component.Params.Input, "Run", "Toggle. Layouts are created while True; names that already exist are skipped (and nothing is imported), so re-running is safe.");
         SetTip(Component.Params.Input, "Template", "Template layout(s) - names (case-insensitive) or numbers (1 = first layout). One template: all names use it. Several: template i -> name i (flat list) or -> branch i (tree); a shorter list reuses its last item. With TemplateFile: layouts of THAT file.");

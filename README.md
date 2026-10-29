@@ -39,7 +39,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 
 ## LFT
 
-**File:** `LayoutFromTemplate.cs` &middot; Component name: *Layout From Template* &middot; v2.3
+**File:** `LayoutFromTemplate.cs` &middot; Component name: *Layout From Template* &middot; v2.4
 
 **Creates one new layout per name**, each a copy of a **template layout**: page size,
 detail views (position, view, scale, projection lock, display mode, layer) and all page-space
@@ -107,10 +107,20 @@ How it works:
 - Creating the layouts is one **Undo** step (the import is its own step before it).
 - Details copy the template detail's **whole view** - camera, projection and zoom - so the scale is the
   same as the template's.
+- **Names are kept.** Details get all attributes of the template detail (object name, layer, colour,
+  user text). Page objects imported from `TemplateFile` that lost their name / user text in Rhino's
+  ImportLayout get them back from the .3dm itself (matched by object type and position); the `Report`
+  says how many were restored.
 - Not copied: per-detail layer visibility overrides.
 - Not compiled here (no Rhino) - test in Grasshopper, first on a copy of the file.
 
 ### Changelog
+
+**v2.4** (2026-10-29)
+- **Fix - names lost on copy.** Detail views only got the name as their *title*; they now get every
+  attribute of the template detail (object Name, colour, user text ...).
+- Curves and other page objects from `TemplateFile` get their Name / user text back from the .3dm when
+  ImportLayout dropped them.
 
 **v2.3** (2026-10-29)
 - **Fix - all names came from the first template.** When the pins kept an older access (`Template` = item),
