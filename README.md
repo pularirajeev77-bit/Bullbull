@@ -33,25 +33,25 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 
 | Component | File | What it does |
 |---|---|---|
-| [LFT](#lft) | `LayoutFromTemplate.cs` | Creates new layouts by copying a template layout - from this file or another Rhino file |
+| [LFT](#lft) | `LayoutFromTemplate.cs` | Creates new layouts (by name) from one template layout - in this file or picked from another Rhino file |
 
 ---
 
 ## LFT
 
-**File:** `LayoutFromTemplate.cs` &middot; Component name: *Layout From Template* &middot; v2.0
+**File:** `LayoutFromTemplate.cs` &middot; Component name: *Layout From Template* &middot; v2.1
 
-**Creates one new layout per name**, each a copy of a template layout: page size,
-detail views (position, view, scale, projection lock, display mode, layer) and
-all page-space objects (title block, text, lines ...). The template can be a layout in
-**this file** or in **another Rhino file**.
+**Creates one new layout per name**, each a copy of **one template layout**: page size,
+detail views (position, view, scale, projection lock, display mode, layer) and all page-space
+objects (title block, text, lines ...). The template can be a layout in **this file** or **one
+layout picked from another Rhino file** - either way, only the layouts in `Names` are added.
 
 | Input | Access | Meaning |
 |---|---|---|
 | `Run` | item | Toggle - layouts are created while it is True |
-| `Template` | item | Template layout name (case-insensitive) - or its number (`1` = first layout) |
-| `Names` | list | Names for the new layouts |
-| `TemplateFile` | item | Optional. Full path of another `.3dm` file to take the template from. Empty = this file |
+| `Template` | item | The **one** layout to use as template - its name (case-insensitive) or number (`1` = first layout). With `TemplateFile`: a layout of **that** file |
+| `Names` | list | Names of the **new layouts to create in this file** - only these are added |
+| `TemplateFile` | item | Optional. Full path of the `.3dm` file that holds the template. Empty = use a layout of this file |
 
 | Output | Meaning |
 |---|---|
@@ -59,40 +59,48 @@ all page-space objects (title block, text, lines ...). The template can be a lay
 
 ### Template from another Rhino file
 
-Set `TemplateFile` to the other file, e.g. `C:\Standards\A1-Sheets.3dm`, and `Template` to the
-layout in that file:
+Example: `Sheets.3dm` has 5 layouts - `A1 Cover`, `A1 Plan`, `A1 Section`, `A3 Detail`, `A3 Notes`.
+You want three new plan sheets in the current file:
 
-1. On the first run the component imports that layout with Rhino's **ImportLayout** command -
-   its title block, text, page objects and details come in as a normal layout of this file.
-2. The new layouts in `Names` are then copied from it, exactly as for a local template.
-3. On later runs the imported layout is already in the file, so it is **reused, not imported again**.
+| Input | Value |
+|---|---|
+| `TemplateFile` | `C:\Standards\Sheets.3dm` |
+| `Template` | `A1 Plan` (or `2`) |
+| `Names` | `GA-01`, `GA-02`, `GA-03` |
 
-**Good to know about importing**
-- Rhino's ImportLayout also brings **all layers** of the other file (a known Rhino behaviour),
-  plus only the geometry placed **on** that layout - not the model geometry seen in its details.
-- If a layout with the template's name already exists in this file, that one is used and nothing
-  is imported. Rename or delete it to import a fresh copy.
-- If the name is not accepted by ImportLayout, put the layout's **number** in `Template`
-  (1 = first layout of that file); the report then names the layout that came in.
-- The imported template stays in the file - delete it afterwards if you don't need it.
+Result in the current file: **only** `GA-01`, `GA-02`, `GA-03`, each a copy of `A1 Plan`.
+`A1 Plan` itself and the other four layouts of `Sheets.3dm` are **not** added.
+
+How it works:
+1. Only the chosen layout is imported from the other file (Rhino's ImportLayout) - as a temporary source.
+2. The layouts in `Names` are copied from it.
+3. The temporary template layout is **deleted again**, with its page objects, plus any layers that came
+   with the import and ended up empty. Layers used by the new layouts (title block, details) stay.
 
 ### Good to know
-- Names that already exist (or are blank) are skipped, so re-running is safe.
-- Set `Run` back to False when done, or it re-runs on every solve.
-- Creating the layouts is one **Undo** step (an import is its own step before it).
-- Details copy the template detail's **whole view** - camera, projection and zoom - so the scale is
-  the same as the template's.
+- Names that already exist (or are blank / repeated) are skipped. When **every** name exists, nothing is
+  imported at all - so `Run` can stay on.
+- With `TemplateFile`, the template is always taken from that file. A layout with the same name in the
+  current file is never used or changed.
+- If ImportLayout doesn't accept the layout name, put its **number** in `Template` (1 = first layout of that file).
+- Creating the layouts is one **Undo** step (the import is its own step before it).
+- Details copy the template detail's **whole view** - camera, projection and zoom - so the scale is the
+  same as the template's.
 - Not copied: per-detail layer visibility overrides.
 - Not compiled here (no Rhino) - test in Grasshopper, first on a copy of the file.
 
 ### Changelog
 
+**v2.1** (2026-10-29)
+- From another file, the template layout is only **borrowed**: imported, copied, then deleted, so only the
+  layouts in `Names` are added. Imported layers that end up empty are removed; any extra layout an import
+  brings is removed straight away.
+- With `TemplateFile` set, a same-named layout in the current file is never used.
+- Nothing is imported when all names already exist; repeated names in `Names` are skipped.
+
 **v2.0** (2026-10-29)
-- **New `TemplateFile`:** take the template layout from another `.3dm` file (imported once).
-- `Template` also accepts the layout number.
-- **Detail scale fix:** the scale was set with `SetScale(PageToModelRatio, ..., 1.0, ...)`, which passes
-  the ratio as the *model* length and turns e.g. 1:100 into 100:1. Each detail now copies the template
-  detail's whole view, so its scale (and perspective lens) match exactly.
-- Component name *Layout From Template*; tooltips for every pin.
+- New `TemplateFile` input; `Template` also accepts the layout number.
+- **Detail scale fix:** `SetScale(PageToModelRatio, ..., 1.0, ...)` passed the ratio as the *model* length
+  (1:100 became 100:1). Each detail now copies the template detail's whole view.
 
 **v1.0** (2026-10-12) - first version.

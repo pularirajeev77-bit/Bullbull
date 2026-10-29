@@ -2,32 +2,36 @@
 /*
   Author      : rajeev pulari / Claude
   Platform    : Rhino 8 | Grasshopper C#
-  Version     : 2.0  (2026-10-29)
+  Version     : 2.1  (2026-10-29)
   Component   : Layout From Template
   NickName    : LFT
-  Description : Creates new layouts by copying a template layout: page size, detail
+  Description : Creates new layouts by copying ONE template layout: page size, detail
                 views (position, view, scale, projection lock, display mode, layer)
                 and all page-space objects (title block, text, lines ...). One new
-                layout per name. The template can be a layout in this file, or a
-                layout in ANOTHER .3dm file (TemplateFile) - it is imported once.
+                layout per name in Names - nothing else is added.
+                The template is a layout of THIS file, or picked from ANOTHER .3dm
+                file (TemplateFile): there it is imported only for the copy and
+                removed again, so only the layouts in Names remain.
 
   Inputs:
     Run          : bool         (Item) - toggle; layouts are created while it is True
-    Template     : string       (Item) - template layout name (or its number, e.g. "2")
-    Names        : List<string> (List) - names of the new layouts
-    TemplateFile : string       (Item) - optional .3dm file to import the template from
+    Template     : string       (Item) - the ONE layout to use as template (name, or number "2")
+    Names        : List<string> (List) - names of the new layouts to create in this file
+    TemplateFile : string       (Item) - optional .3dm file that holds the template layout
 
   Output:
     Report       : string - template source, then created / skipped / failed per name
 
+  v2.1
+    - TemplateFile: the template layout is imported only as a temporary source and
+      deleted after copying (with its page objects and any imported layers left
+      empty). Only the layouts named in Names are added to this file.
+    - With TemplateFile, the template is always taken from that file - a layout of
+      the same name in this file is never used or changed.
+    - No import at all when every name already exists (Run can stay on).
   v2.0
-    - NEW TemplateFile: import the template layout from another Rhino file (Rhino's
-      ImportLayout), then copy it as before. Imported once; re-runs reuse it.
-    - Template also accepts the layout number.
-    - Details: the template detail's whole view (camera, projection, zoom) is copied,
-      so the scale matches exactly. Before, SetScale got PageToModelRatio as the MODEL
-      length, which inverts the scale (1:100 -> 100:1).
-    - Layouts already in the file are not created again; report lists every name.
+    - TemplateFile input; Template accepts a layout number; detail views copied as a
+      whole (camera, projection, zoom) - the old SetScale call inverted the scale.
 */
 #endregion
 
@@ -64,104 +68,132 @@ public class Script_Instance : GH_ScriptInstance
 
         RhinoDoc doc = RhinoDocument ?? RhinoDoc.ActiveDoc;
         if (doc == null) { Fail(ref Report, "No active Rhino document."); return; }
-        if (string.IsNullOrWhiteSpace(Template)) { Warn(ref Report, "No template layout name (or number)."); return; }
-        if (Names == null || Names.Count == 0) { Warn(ref Report, "No names provided."); return; }
+        if (string.IsNullOrWhiteSpace(Template)) { Warn(ref Report, "Template: give the name (or number) of the layout to use."); return; }
+        if (Names == null || Names.Count == 0) { Warn(ref Report, "Names: give the names of the new layouts."); return; }
 
         string key = Template.Trim();
+        bool fromFile = !string.IsNullOrWhiteSpace(TemplateFile);
+        string path = fromFile ? TemplateFile.Trim().Trim('"') : null;
         var report = new StringBuilder();
 
-        // 1. Find the template: in this file, or imported from TemplateFile
-        RhinoPageView src = FindPage(doc, key);
-        bool fromFile = !string.IsNullOrWhiteSpace(TemplateFile);
-
-        if (fromFile && src == null)
+        // 0. Which names still have to be made? (nothing to do -> no import)
+        var todo = new List<string>();
+        foreach (string raw in Names)
         {
-            string path = TemplateFile.Trim().Trim('"');
-            if (!File.Exists(path)) { Fail(ref Report, "Template file not found: " + path); return; }
-            if (!path.EndsWith(".3dm", StringComparison.OrdinalIgnoreCase)) { Fail(ref Report, "Template file must be a .3dm file: " + path); return; }
+            string name = raw == null ? "" : raw.Trim();
+            if (name.Length == 0) continue;
+            if (todo.Any(t => string.Equals(t, name, StringComparison.OrdinalIgnoreCase))) continue;   // duplicate in Names
+            if (FindPageByName(doc, name) != null) { report.AppendLine("Skipped (already exists): " + name); continue; }
+            todo.Add(name);
+        }
+        if (todo.Count == 0)
+        {
+            report.AppendLine("Nothing to create - all names already exist.");
+            Finish(ref Report, report, 0);
+            return;
+        }
 
-            src = ImportTemplate(doc, path, key, report);
-            if (src == null)
+        // 1. The template: imported from TemplateFile (temporary), or a layout of this file
+        RhinoPageView src;
+        RhinoPageView imported = null;
+        HashSet<Guid> layersBefore = null;
+
+        if (fromFile)
+        {
+            if (!File.Exists(path)) { Fail(ref Report, "Template file not found: " + path); return; }
+            if (!path.EndsWith(".3dm", StringComparison.OrdinalIgnoreCase)) { Fail(ref Report, "TemplateFile must be a .3dm file: " + path); return; }
+
+            layersBefore = new HashSet<Guid>(doc.Layers.Where(l => l != null && !l.IsDeleted).Select(l => l.Id));
+            imported = ImportTemplate(doc, path, key, report);
+            if (imported == null)
             {
                 Fail(ref Report, report + "Could not import layout '" + key + "' from " + Path.GetFileName(path) +
                      ". Check the layout name, or give its number in Template (1 = first layout in that file).");
                 return;
             }
+            src = imported;
         }
-        else if (fromFile)
+        else
         {
-            report.AppendLine("Template '" + src.PageName + "' is already in this file - using it (not imported again).");
+            src = FindPage(doc, key);
+            if (src == null) { Fail(ref Report, "Template layout not found in this file: " + key); return; }
+            report.AppendLine("Template: layout '" + src.PageName + "' of this file.");
         }
 
-        if (src == null) { Fail(ref Report, "Template layout not found: " + key); return; }
-
-        // 2. Collect the template contents once
-        var details = new List<DetailViewObject>();
-        var others = new List<RhinoObject>();
-        foreach (RhinoObject o in doc.Objects)
-        {
-            if (o.Attributes.ViewportId != src.MainViewport.Id) continue;
-            if (o is DetailViewObject d) details.Add(d);
-            else others.Add(o);
-        }
-
-        // 3. Build one layout per name
-        int made = 0;
-        uint undo = doc.BeginUndoRecord("Layouts from template");
+        int made = 0, detailCount = 0;
         try
         {
-            foreach (string raw in Names)
+            // 2. Template contents
+            var details = new List<DetailViewObject>();
+            var others = new List<RhinoObject>();
+            foreach (RhinoObject o in doc.Objects)
             {
-                string name = raw == null ? "" : raw.Trim();
-                if (name.Length == 0) continue;
+                if (o.Attributes.ViewportId != src.MainViewport.Id) continue;
+                if (o is DetailViewObject d) details.Add(d);
+                else others.Add(o);
+            }
+            detailCount = details.Count;
 
-                if (FindPageByName(doc, name) != null) { report.AppendLine("Skipped (already exists): " + name); continue; }
-
-                try
+            // 3. One new layout per name
+            uint undo = doc.BeginUndoRecord("Layouts from template");
+            try
+            {
+                foreach (string name in todo)
                 {
-                    RhinoPageView page = doc.Views.AddPageView(name, src.PageWidth, src.PageHeight);
-                    if (page == null) { report.AppendLine("Failed to create: " + name); continue; }
-
-                    foreach (DetailViewObject sd in details)
-                        CopyDetail(doc, sd, page);
-
-                    foreach (RhinoObject so in others)
+                    try
                     {
-                        ObjectAttributes attr = so.Attributes.Duplicate();
-                        attr.ViewportId = page.MainViewport.Id;
-                        attr.Space = ActiveSpace.PageSpace;
-                        doc.Objects.Add(so.Geometry.Duplicate(), attr);
-                    }
+                        RhinoPageView page = doc.Views.AddPageView(name, src.PageWidth, src.PageHeight);
+                        if (page == null) { report.AppendLine("Failed to create: " + name); continue; }
 
-                    made++;
-                    report.AppendLine("Created: " + name);
+                        foreach (DetailViewObject sd in details)
+                            CopyDetail(doc, sd, page);
+
+                        foreach (RhinoObject so in others)
+                        {
+                            ObjectAttributes attr = so.Attributes.Duplicate();
+                            attr.ViewportId = page.MainViewport.Id;
+                            attr.Space = ActiveSpace.PageSpace;
+                            doc.Objects.Add(so.Geometry.Duplicate(), attr);
+                        }
+
+                        made++;
+                        report.AppendLine("Created: " + name);
+                    }
+                    catch (Exception ex)
+                    {
+                        report.AppendLine("Failed on '" + name + "': " + ex.Message);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    report.AppendLine("Failed on '" + name + "': " + ex.Message);
-                }
+            }
+            finally
+            {
+                doc.EndUndoRecord(undo);
             }
         }
         finally
         {
-            doc.EndUndoRecord(undo);
+            // 4. The imported template was only the source - remove it again
+            if (imported != null) RemoveImported(doc, imported, layersBefore, report);
         }
 
-        if (made > 0) doc.Views.Redraw();
-
         report.AppendLine("------------------------------------");
-        report.AppendLine("Template        : " + src.PageName + (fromFile ? "  (from " + Path.GetFileName(TemplateFile.Trim().Trim('"')) + ")" : ""));
-        report.AppendLine("Details copied  : " + details.Count + " per layout");
-        report.AppendLine("Layouts created : " + made);
-
-        Component.Message = "Layout From Template v2.0 | " + made + " new";
-        _lastReport = report.ToString();
-        Report = _lastReport;
+        report.AppendLine("Template        : " + key + (fromFile ? "  (from " + Path.GetFileName(path) + ", not kept)" : ""));
+        report.AppendLine("Details copied  : " + detailCount + " per layout");
+        Finish(ref Report, report, made);
     }
 
     // <Custom additional code>
     private string _lastReport = null;
     private bool _metaSet = false;
+
+    private void Finish(ref object Report, StringBuilder report, int made)
+    {
+        report.AppendLine("Layouts created : " + made);
+        if (made > 0) RhinoDoc.ActiveDoc?.Views.Redraw();
+        Component.Message = "Layout From Template v2.1 | " + made + " new";
+        _lastReport = report.ToString();
+        Report = _lastReport;
+    }
 
     // ---- template lookup -------------------------------------------------------
 
@@ -182,9 +214,8 @@ public class Script_Instance : GH_ScriptInstance
         return null;
     }
 
-    // Import one layout from another .3dm with Rhino's ImportLayout command.
-    // Brings the layout's page objects and details. NOTE: Rhino also imports all
-    // layers of that file (known Rhino behaviour).
+    // Import ONE layout from another .3dm with Rhino's ImportLayout command.
+    // Brings the layout's page objects and details (and, as Rhino does, that file's layers).
     private RhinoPageView ImportTemplate(RhinoDoc doc, string path, string key, StringBuilder report)
     {
         var before = new HashSet<Guid>(doc.Views.GetPageViews().Select(v => v.MainViewport.Id));
@@ -199,12 +230,60 @@ public class Script_Instance : GH_ScriptInstance
             return null;
         }
 
-        // the imported layout: same name, else (renamed by Rhino or imported by number) the first new one
+        // The one we asked for: same name (Rhino may add a suffix if the name is taken), else the first new one
         RhinoPageView page = added.FirstOrDefault(v => string.Equals(v.PageName, key, StringComparison.OrdinalIgnoreCase))
+                          ?? added.FirstOrDefault(v => v.PageName.StartsWith(key, StringComparison.OrdinalIgnoreCase))
                           ?? added[0];
-        report.AppendLine("Imported template layout '" + page.PageName + "' from " + Path.GetFileName(path) + ".");
-        if (added.Count > 1) report.AppendLine("Note: " + added.Count + " layouts came in; using '" + page.PageName + "'.");
+
+        // Anything else that came in is not wanted - remove it straight away
+        foreach (RhinoPageView extra in added.Where(v => v.MainViewport.Id != page.MainViewport.Id).ToList())
+            RemovePage(doc, extra);
+
+        report.AppendLine("Template: layout '" + key + "' taken from " + Path.GetFileName(path) + ".");
         return page;
+    }
+
+    // ---- clean-up of the imported template ---------------------------------------
+
+    private void RemoveImported(RhinoDoc doc, RhinoPageView page, HashSet<Guid> layersBefore, StringBuilder report)
+    {
+        string name = page.PageName;
+        bool removed = RemovePage(doc, page);
+        if (!removed)
+            report.AppendLine("Note: the imported template layout '" + name + "' could not be removed - delete it by hand.");
+
+        // Layers that only came in with the import and are now empty
+        int purged = 0;
+        if (layersBefore != null)
+        {
+            for (int pass = 0; pass < 10; pass++)   // children first, then their parents
+            {
+                bool any = false;
+                foreach (Layer l in doc.Layers.Where(x => x != null && !x.IsDeleted && !layersBefore.Contains(x.Id)).ToList())
+                {
+                    if (l.Index == doc.Layers.CurrentLayerIndex) continue;
+                    var kids = l.GetChildren();
+                    if (kids != null && kids.Any(k => !k.IsDeleted)) continue;
+                    if (doc.Objects.FindByLayer(l).Length > 0) continue;
+                    if (doc.Layers.Delete(l.Index, true)) { purged++; any = true; }
+                }
+                if (!any) break;
+            }
+        }
+        if (purged > 0) report.AppendLine("Removed " + purged + " empty layer(s) that came with the import.");
+    }
+
+    // Delete a layout and everything drawn on it
+    private static bool RemovePage(RhinoDoc doc, RhinoPageView page)
+    {
+        Guid vpId = page.MainViewport.Id;
+        var ids = new List<Guid>();
+        foreach (RhinoObject o in doc.Objects)
+            if (o.Attributes.ViewportId == vpId) ids.Add(o.Id);
+        if (ids.Count > 0) doc.Objects.Delete(ids, true);
+
+        page.Close();   // closing a page view deletes the layout
+        return !doc.Views.GetPageViews().Any(v => v.MainViewport.Id == vpId);
     }
 
     // ---- detail copy ------------------------------------------------------------
@@ -260,15 +339,15 @@ public class Script_Instance : GH_ScriptInstance
 
         Component.Name = "Layout From Template";
         Component.NickName = "LFT";
-        Component.Message = "Layout From Template v2.0";
+        Component.Message = "Layout From Template v2.1";
         Component.Description =
-            "Creates new layouts by copying a template layout (page size, details, page objects). " +
-            "The template can be in this file or imported from another .3dm (TemplateFile). Rajeev Pulari, v2.0.";
+            "Creates new layouts (Names) by copying ONE template layout - from this file, or picked from another .3dm " +
+            "(TemplateFile), where the template is only borrowed and removed again. Rajeev Pulari, v2.1.";
 
-        SetTip(Component.Params.Input, "Run", "Toggle. Layouts are created while True; existing names are skipped, so re-running is safe. Set back to False when done.");
-        SetTip(Component.Params.Input, "Template", "Template layout name (case-insensitive) - or its number (1 = first layout). With TemplateFile, the layout in THAT file.");
-        SetTip(Component.Params.Input, "Names", "Names for the new layouts. List access. Blank or already-used names are skipped.");
-        SetTip(Component.Params.Input, "TemplateFile", "Optional. Full path of another .3dm file to take the template layout from. It is imported once (Rhino ImportLayout - also brings that file's layers). Empty = use a layout in this file.");
+        SetTip(Component.Params.Input, "Run", "Toggle. Layouts are created while True; names that already exist are skipped (and nothing is imported), so re-running is safe.");
+        SetTip(Component.Params.Input, "Template", "The ONE layout to use as template - its name (case-insensitive) or number (1 = first layout). With TemplateFile: a layout of THAT file, e.g. one of its 5 layouts.");
+        SetTip(Component.Params.Input, "Names", "Names of the new layouts to create in this file (list). Only these are added. Blank, repeated or existing names are skipped.");
+        SetTip(Component.Params.Input, "TemplateFile", "Optional. Full path of the .3dm file holding the template layout. The template is imported only to copy it, then removed. Empty = use a layout of this file.");
         SetTip(Component.Params.Output, "Report", "Template source, then created / skipped / failed per name.");
     }
 
