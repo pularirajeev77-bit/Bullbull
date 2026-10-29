@@ -33,29 +33,43 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 
 | Component | File | What it does |
 |---|---|---|
-| [LFT](#lft) | `LayoutFromTemplate.cs` | Creates new layouts (by name) from one template layout - in this file or picked from another Rhino file |
+| [LFT](#lft) | `LayoutFromTemplate.cs` | Creates new layouts (list or tree of names) from one or more template layouts - in this file or picked from another Rhino file |
 
 ---
 
 ## LFT
 
-**File:** `LayoutFromTemplate.cs` &middot; Component name: *Layout From Template* &middot; v2.1
+**File:** `LayoutFromTemplate.cs` &middot; Component name: *Layout From Template* &middot; v2.2
 
-**Creates one new layout per name**, each a copy of **one template layout**: page size,
+**Creates one new layout per name**, each a copy of a **template layout**: page size,
 detail views (position, view, scale, projection lock, display mode, layer) and all page-space
-objects (title block, text, lines ...). The template can be a layout in **this file** or **one
-layout picked from another Rhino file** - either way, only the layouts in `Names` are added.
+objects (title block, text, lines ...). Use **one template or a list of templates**, and names as a
+**list or a tree**. Templates can be layouts of **this file** or **picked from another Rhino file** -
+either way, only the layouts in `Names` are added.
 
 | Input | Access | Meaning |
 |---|---|---|
 | `Run` | item | Toggle - layouts are created while it is True |
-| `Template` | item | The **one** layout to use as template - its name (case-insensitive) or number (`1` = first layout). With `TemplateFile`: a layout of **that** file |
-| `Names` | list | Names of the **new layouts to create in this file** - only these are added |
+| `Template` | list | Template layout(s) - names (case-insensitive) or numbers (`1` = first layout). With `TemplateFile`: layouts of **that** file |
+| `Names` | tree | Names of the **new layouts to create in this file** - a list or a tree. Only these are added |
 | `TemplateFile` | item | Optional. Full path of the `.3dm` file that holds the template. Empty = use a layout of this file |
 
 | Output | Meaning |
 |---|---|
 | `Report` | Where the template came from, then created / skipped / failed per name |
+
+### Several templates: how names are paired
+
+| `Template` | `Names` | Result |
+|---|---|---|
+| `A1` | `GA-01, GA-02, GA-03` | all three from `A1` |
+| `A1, A3, Cover` | `GA-01, DT-01, CV-01` (flat list) | `GA-01`←`A1`, `DT-01`←`A3`, `CV-01`←`Cover` - item by item |
+| `A1, A3` | `GA-01, DT-01, DT-02` (flat list) | `GA-01`←`A1`, `DT-01`←`A3`, `DT-02`←`A3` - last template reused |
+| `A1, A3` | tree `{0}` `GA-01, GA-02` · `{1}` `DT-01, DT-02, DT-03` | branch `{0}` ← `A1`, branch `{1}` ← `A3` |
+| `A1` | any tree | every name from `A1` |
+
+A shorter `Template` list reuses its last template. Templates left over (more templates than names or
+branches) are not used - the component shows a remark. The `Report` lists each new layout with its template.
 
 ### Template from another Rhino file
 
@@ -72,10 +86,11 @@ Result in the current file: **only** `GA-01`, `GA-02`, `GA-03`, each a copy of `
 `A1 Plan` itself and the other four layouts of `Sheets.3dm` are **not** added.
 
 How it works:
-1. Only the chosen layout is imported from the other file (Rhino's ImportLayout) - as a temporary source.
-2. The layouts in `Names` are copied from it.
-3. The temporary template layout is **deleted again**, with its page objects, plus any layers that came
-   with the import and ended up empty. Layers used by the new layouts (title block, details) stay.
+1. Only the chosen template layout(s) are imported from the other file (Rhino's ImportLayout) - each
+   **once**, as a temporary source, however many names use it.
+2. The layouts in `Names` are copied from them.
+3. The temporary template layouts are **deleted again**, with their page objects, plus any layers that
+   came with the import and ended up empty. Layers used by the new layouts (title block, details) stay.
 
 ### Good to know
 - Names that already exist (or are blank / repeated) are skipped. When **every** name exists, nothing is
@@ -90,6 +105,12 @@ How it works:
 - Not compiled here (no Rhino) - test in Grasshopper, first on a copy of the file.
 
 ### Changelog
+
+**v2.2** (2026-10-29)
+- `Template` is a **list** and `Names` a **tree**: several templates to several names - item by item for
+  a flat list, branch by branch for a tree, last template reused (see the pairing table).
+- Each template is imported once and all imported templates are removed after copying.
+- `Report` shows the template of every created layout; a remark when templates are left over.
 
 **v2.1** (2026-10-29)
 - From another file, the template layout is only **borrowed**: imported, copied, then deleted, so only the
