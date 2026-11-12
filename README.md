@@ -10,6 +10,7 @@ Back to the index: [`main`](https://github.com/pularirajeev77-bit/Bullbull/tree/
 | Component | Nickname | What it does |
 |---|---|---|
 | [AutoDimension](#autodimension) | `AutoDim` | Automatically dimensions curves, lines, polylines and arcs without overlaps |
+| [SectionMark](#sectionmark) | `SecMark` | Plan section mark: section line, two arrow flags and a label on a plane, plus its clip plane |
 | [DetailMark](#detailmark) | `DetMark` | Detail mark: circle, tail with arrow flag and label on a plane, plus a clip plane |
 
 ## How to use
@@ -93,3 +94,37 @@ clip plane built from the detail plane.
 - **v1.2** (2026-11-12) - Metadata and tooltips set once; no crash without an active document;
   invalid sizes fall back to the defaults.
 - **v1.1** - First version.
+
+---
+
+## SectionMark
+
+**File:** `SectionMark.cs` &middot; Component name: *SectionMark* &middot; v2.2
+
+Draws a **plan section mark** flat on a plane: the section line along the plane's Y axis, two
+arrow flags facing the plane's X axis, and a label at the near end (lower world Y), always
+placed outside the line. Pairs with [DetailMark](#detailmark), which uses the same flags and label style.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `SectionPlane` | item | Where the mark goes (required, World XY if invalid). Line along Y, arrows face X |
+| `MarkScale` | item | 2D scale of the mark (default 1 = line length 10) |
+| `TextHeight` | item | Label text height (default 1) |
+| `LabelText` | item | Label (default `SEC-A`) |
+| `FlipMark` | item | True = label at the other end of the line |
+
+| Output | Access | Meaning |
+|---|---|---|
+| `Mark` | list | Section line + 2 arrow flags (curves) |
+| `Label` | item | The label as a text entity (bakeable) |
+| `ClipPlane` | item | Clip plane from the section plane: origin O, X = -Y, Y = -Z |
+
+**Notes**
+- The label uses the current Rhino dimension style (font), with `TextHeight` as its height.
+- Proportions are constants in the code (`BaseLength`, `BaseArrow`, `FlagBack`, `TextGap`).
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+**Changelog**
+- **v2.2** (2026-11-12) - Moved here from the temp repo. Metadata set once; no crash without an
+  active document; invalid sizes fall back to the defaults.
+- **v2.1** - Last version in temp (`Drafting/SectionMark.cs`).
