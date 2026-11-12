@@ -26,7 +26,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`grid`](https://github.com/pularirajeev77-bit/Bullbull/tree/grid) | GridBoundList, CrvIntGrid |
 | [`subd`](https://github.com/pularirajeev77-bit/Bullbull/tree/subd) | SubDCrease |
 | [`layout`](https://github.com/pularirajeev77-bit/Bullbull/tree/layout) | LFT |
-| [`Annotation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Annotation) | *(new - no components yet)* |
+| [`Annotation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Annotation) | AutoDim, DetMark |
 
 ## All components
 
@@ -109,6 +109,8 @@ topic into branches — switch branch to see the code and full instructions.
 | CrvIntGrid | `grid` | Curves in two directions -> ordered point grid (like PanelingTools ptIntersect) with a gap tolerance |
 | SubDCrease | `subd` | Creases or smooths chosen SubD edges by edge index |
 | LFT | `layout` | Creates new layouts (list or tree of names) from one or more template layouts (page size, details, title block) - from this file or picked from another Rhino file |
+| AutoDim | `Annotation` | Automatically dimensions curves, lines, polylines and arcs without overlaps |
+| DetMark | `Annotation` | Detail mark: circle, tail with arrow flag and label on a plane, plus a clip plane |
 
 ## How to use a script
 
