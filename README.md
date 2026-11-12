@@ -10,6 +10,7 @@ Back to the index: [`main`](https://github.com/pularirajeev77-bit/Bullbull/tree/
 | Component | Nickname | What it does |
 |---|---|---|
 | [AutoDimension](#autodimension) | `AutoDim` | Automatically dimensions curves, lines, polylines and arcs without overlaps |
+| [DetailMark](#detailmark) | `DetMark` | Detail mark: circle, tail with arrow flag and label on a plane, plus a clip plane |
 
 ## How to use
 1. Drop a **C# Script** component on the Grasshopper canvas.
@@ -55,3 +56,40 @@ dimensioned again.
   one outline - otherwise each line is measured on its own.
 - The Report line says how many texts could not be placed fully clear; check those by eye.
 
+---
+
+## DetailMark
+
+**File:** `DetailMark.cs` &middot; Component name: *DetailMark* &middot; v1.2
+
+Draws a detail mark in the style of the SectionMark family: a circle standing perpendicular
+to the detail plane (circle normal = plane X, the view direction), a tail leaving the circle
+edge along plane -Y, an arrow flag at the tail end pointing along plane X, and a label just
+beyond the flag. `FlipMark` sends tail, flag and label to the other side. It also outputs a
+clip plane built from the detail plane.
+
+| Input | Access | Meaning |
+|---|---|---|
+| `DetailPlane` | item | Placement of the mark. X = view direction, the tail runs along -Y. Invalid = World XY |
+| `Radius` | item | Circle radius, default 1. Tail length = Radius x 1.333 |
+| `MarkScale` | item | Size of the arrow flag (flag = 1 x MarkScale), default 1 |
+| `TextHeight` | item | Label text height, default 1 |
+| `LabelText` | item | Label text, default `DET-1` |
+| `FlipMark` | item | True = tail, flag and label on the plane +Y side. Default false |
+
+| Output | Access | Meaning |
+|---|---|---|
+| `Mark` | list | The circle and the tail polyline with its flag |
+| `Label` | item | Label as a text entity (bakeable) |
+| `ClipPlane` | item | Origin = plane origin, X = -Y, Y = -Z of the detail plane |
+
+**Notes**
+- The label uses the current Rhino dimension style (font), with `TextHeight` as its height.
+- Proportions of tail, flag inset and text gap are constants at the top of the methods
+  (`TailRatio`, `FlagBack`, `TextGap`) - edit them there.
+- Not compiled here (no Rhino) - test in Grasshopper.
+
+**Changelog**
+- **v1.2** (2026-11-12) - Metadata and tooltips set once; no crash without an active document;
+  invalid sizes fall back to the defaults.
+- **v1.1** - First version.
