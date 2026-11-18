@@ -2,7 +2,7 @@
 /*
   Author      : rajeev pulari / Claude
   Platform    : Rhino 8 | Grasshopper C#
-  Version     : 2.4  (2026-10-29)
+  Version     : 2.5  (2026-11-18)
   Component   : Layout From Template
   NickName    : LFT
   Description : Creates new layouts by copying template layouts: page size, detail
@@ -18,7 +18,7 @@
                 copied, then removed - so only the layouts in Names are added.
 
   Inputs:
-    Run          : bool             (Item) - toggle; layouts are created while it is True
+    Run          : bool             (Item) - button or toggle; layouts are created once per click
     Template     : List<string>     (List) - template layout name(s) (or numbers, "2")
     Names        : DataTree<string> (Tree) - names of the new layouts (list or tree)
     TemplateFile : string           (Item) - optional .3dm file holding the templates
@@ -26,6 +26,12 @@
   Output:
     Report       : string - templates used, then created / skipped / failed per name
 
+  v2.5
+    - Fix: the Run button froze and needed a second click. The layouts were made
+      (ImportLayout commands, new pages) INSIDE the Grasshopper solution while the
+      button was held, so Grasshopper never saw the release. Run now only queues the
+      job; it runs on Rhino's Idle event once the mouse button is up, then the
+      component refreshes to show the Report and its messages.
   v2.4
     - Fix: names were lost. Detail views now get ALL attributes of the template
       detail (object Name, colour, user text ...) - the name used to go only to the
@@ -70,11 +76,11 @@ using Grasshopper.Kernel.Data;
 public class Script_Instance : GH_ScriptInstance
 {
     private void RunScript(
-        bool Run,
-        List<string> Template,
-        DataTree<string> Names,
-        string TemplateFile,
-        ref object Report)
+		bool Run,
+		List<string> Template,
+		DataTree<string> Names,
+		string TemplateFile,
+		ref object Report)
     {
         SetMetadata();
 
@@ -82,20 +88,92 @@ public class Script_Instance : GH_ScriptInstance
         // once - later iterations (pins left at item / list access) do nothing.
         if (Iteration > 0) { Report = _lastReport ?? ""; return; }
 
+        // Refresh after the Idle run: show its report and messages, never queue again
+        if (_refreshing)
+        {
+            _refreshing = false;
+            foreach (var m in _lastMessages) Component.AddRuntimeMessage(m.Key, m.Value);
+            Report = _lastReport ?? "";
+            return;
+        }
+
+        if (_queued) { Report = "Creating layouts..."; return; }
+
         if (!Run)
         {
-            Report = _lastReport ?? "Toggle Run to create the layouts.";
+            Report = _lastReport ?? "Press Run to create the layouts.";
             return;
         }
 
         RhinoDoc doc = RhinoDocument ?? RhinoDoc.ActiveDoc;
-        if (doc == null) { Fail(ref Report, "No active Rhino document."); return; }
+        if (doc == null) { _lastMessages.Clear(); Fail(ref Report, "No active Rhino document."); Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, Report.ToString()); return; }
 
-        var templates = ReadAllStrings("Template", Template)
+        // Never make layouts inside the solution: capture the inputs now and run on Idle,
+        // after the button is released (a held button cannot see its release otherwise)
+        _qDoc = doc;
+        _qTemplates = ReadAllStrings("Template", Template);
+        _qNames = ReadTree("Names", Names);
+        _qTemplateFile = TemplateFile;
+        _queued = true;
+        RhinoApp.Idle += OnIdleRun;
+        Report = "Creating layouts...";
+    }
+
+    // <Custom additional code>
+    private string _lastReport = null;
+
+    // ---- run on Idle, once the Run button is released --------------------------------
+
+    private bool _queued = false;
+    private bool _refreshing = false;
+    private RhinoDoc _qDoc;
+    private List<string> _qTemplates;
+    private DataTree<string> _qNames;
+    private string _qTemplateFile;
+    private readonly List<KeyValuePair<GH_RuntimeMessageLevel, string>> _lastMessages =
+        new List<KeyValuePair<GH_RuntimeMessageLevel, string>>();
+
+    private void OnIdleRun(object sender, EventArgs e)
+    {
+        // Button still held: wait for its release so Grasshopper sees it go back to False
+        if (System.Windows.Forms.Control.MouseButtons != System.Windows.Forms.MouseButtons.None) return;
+
+        RhinoApp.Idle -= OnIdleRun;
+        _queued = false;
+        _lastMessages.Clear();
+
+        try
+        {
+            _lastReport = CreateLayouts(_qDoc, _qTemplates, _qNames, _qTemplateFile);
+        }
+        catch (Exception ex)
+        {
+            object r = null;
+            Fail(ref r, "Error: " + ex.Message);
+        }
+        finally
+        {
+            _qDoc = null;
+            _qTemplates = null;
+            _qNames = null;
+        }
+
+        // Show Report and messages
+        if (Component != null && Component.OnPingDocument() != null)
+        {
+            _refreshing = true;
+            Component.ExpireSolution(true);
+        }
+    }
+
+    private string CreateLayouts(RhinoDoc doc, List<string> templateInput, DataTree<string> Names, string TemplateFile)
+    {
+        object Report = null;
+
+        var templates = (templateInput ?? new List<string>())
             .Select(t => t == null ? "" : t.Trim()).Where(t => t.Length > 0).ToList();
-        Names = ReadTree("Names", Names);
-        if (templates.Count == 0) { Warn(ref Report, "Template: give the name(s) (or numbers) of the template layout(s)."); return; }
-        if (Names == null || Names.DataCount == 0) { Warn(ref Report, "Names: give the names of the new layouts."); return; }
+        if (templates.Count == 0) { Warn(ref Report, "Template: give the name(s) (or numbers) of the template layout(s)."); return Report as string; }
+        if (Names == null || Names.DataCount == 0) { Warn(ref Report, "Names: give the names of the new layouts."); return Report as string; }
 
         bool fromFile = !string.IsNullOrWhiteSpace(TemplateFile);
         string path = fromFile ? TemplateFile.Trim().Trim('"') : null;
@@ -127,14 +205,14 @@ public class Script_Instance : GH_ScriptInstance
 
         int used = flat ? Math.Min(templates.Count, flatIndex) : Math.Min(templates.Count, Names.BranchCount);
         if (templates.Count > used)
-            Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark,
-                (templates.Count - used) + " template(s) not used - more templates than " + (flat ? "names" : "branches") + ".");
+            _lastMessages.Add(new KeyValuePair<GH_RuntimeMessageLevel, string>(GH_RuntimeMessageLevel.Remark,
+                (templates.Count - used) + " template(s) not used - more templates than " + (flat ? "names" : "branches") + "."));
 
         if (jobs.Count == 0)
         {
             report.AppendLine("Nothing to create - all names already exist.");
             Finish(ref Report, report, 0);
-            return;
+            return Report as string;
         }
 
         // 1. Template pages: imported once each from TemplateFile (temporary), or layouts of this file
@@ -149,8 +227,8 @@ public class Script_Instance : GH_ScriptInstance
 
             if (fromFile)
             {
-                if (!File.Exists(path)) { Fail(ref Report, "Template file not found: " + path); return; }
-                if (!path.EndsWith(".3dm", StringComparison.OrdinalIgnoreCase)) { Fail(ref Report, "TemplateFile must be a .3dm file: " + path); return; }
+                if (!File.Exists(path)) { Fail(ref Report, "Template file not found: " + path); return Report as string; }
+                if (!path.EndsWith(".3dm", StringComparison.OrdinalIgnoreCase)) { Fail(ref Report, "TemplateFile must be a .3dm file: " + path); return Report as string; }
                 layersBefore = new HashSet<Guid>(doc.Layers.Where(l => l != null && !l.IsDeleted).Select(l => l.Id));
             }
 
@@ -176,7 +254,7 @@ public class Script_Instance : GH_ScriptInstance
             if (srcPages.Count == 0)
             {
                 Fail(ref Report, report + "No template layout available - nothing created.");
-                return;
+                return Report as string;
             }
 
             // 2. Contents of each template, collected once
@@ -234,10 +312,8 @@ public class Script_Instance : GH_ScriptInstance
         report.AppendLine("Templates used  : " + string.Join(", ", srcPages.Keys) +
                           (fromFile ? "  (from " + Path.GetFileName(path) + ", not kept)" : ""));
         Finish(ref Report, report, made);
+        return Report as string;
     }
-
-    // <Custom additional code>
-    private string _lastReport = null;
 
     // ---- names lost by ImportLayout: take them back from the .3dm itself ----------
 
@@ -337,7 +413,7 @@ public class Script_Instance : GH_ScriptInstance
     {
         report.AppendLine("Layouts created : " + made);
         if (made > 0) RhinoDoc.ActiveDoc?.Views.Redraw();
-        Component.Message = "Layout From Template v2.4 | " + made + " new";
+        Component.Message = "Layout From Template v2.5 | " + made + " new";
         _lastReport = report.ToString();
         Report = _lastReport;
     }
@@ -552,17 +628,18 @@ public class Script_Instance : GH_ScriptInstance
     }
 
     // ---- messages + metadata ------------------------------------------------------
+    // Messages are kept and shown when the component refreshes after the Idle run
 
     private void Fail(ref object report, string msg)
     {
         report = msg; _lastReport = msg;
-        Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, msg);
+        _lastMessages.Add(new KeyValuePair<GH_RuntimeMessageLevel, string>(GH_RuntimeMessageLevel.Error, msg));
     }
 
     private void Warn(ref object report, string msg)
     {
         report = msg;
-        Component.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, msg);
+        _lastMessages.Add(new KeyValuePair<GH_RuntimeMessageLevel, string>(GH_RuntimeMessageLevel.Warning, msg));
     }
 
     private void SetMetadata()
@@ -572,12 +649,12 @@ public class Script_Instance : GH_ScriptInstance
 
         Component.Name = "Layout From Template";
         Component.NickName = "LFT";
-        Component.Message = "Layout From Template v2.4";
+        Component.Message = "Layout From Template v2.5";
         Component.Description =
             "Creates new layouts (Names, list or tree) from one or more template layouts - from this file, or picked " +
-            "from another .3dm (TemplateFile), where templates are only borrowed and removed again. Rajeev Pulari, v2.4.";
+            "from another .3dm (TemplateFile), where templates are only borrowed and removed again. Rajeev Pulari, v2.5.";
 
-        SetTip(Component.Params.Input, "Run", "Toggle. Layouts are created while True; names that already exist are skipped (and nothing is imported), so re-running is safe.");
+        SetTip(Component.Params.Input, "Run", "Button or toggle. One click creates the layouts - they are made as soon as the button is released; names that already exist are skipped (and nothing is imported), so re-running is safe.");
         SetTip(Component.Params.Input, "Template", "Template layout(s) - names (case-insensitive) or numbers (1 = first layout). One template: all names use it. Several: template i -> name i (flat list) or -> branch i (tree); a shorter list reuses its last item. With TemplateFile: layouts of THAT file.");
         SetTip(Component.Params.Input, "Names", "Names of the new layouts to create in this file - a list or a tree (tree access). Tree: branch i uses template i. Only these layouts are added; blank, repeated or existing names are skipped.");
         SetTip(Component.Params.Input, "TemplateFile", "Optional. Full path of the .3dm file holding the template layouts. Each template is imported once, copied, then removed. Empty = use layouts of this file.");

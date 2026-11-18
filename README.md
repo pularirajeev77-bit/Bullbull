@@ -39,7 +39,7 @@ Other branches: [`TEXT`](https://github.com/pularirajeev77-bit/Bullbull/tree/TEX
 
 ## LFT
 
-**File:** `LayoutFromTemplate.cs` &middot; Component name: *Layout From Template* &middot; v2.4
+**File:** `LayoutFromTemplate.cs` &middot; Component name: *Layout From Template* &middot; v2.5
 
 **Creates one new layout per name**, each a copy of a **template layout**: page size,
 detail views (position, view, scale, projection lock, display mode, layer) and all page-space
@@ -49,7 +49,7 @@ either way, only the layouts in `Names` are added.
 
 | Input | Access | Meaning |
 |---|---|---|
-| `Run` | item | Toggle - layouts are created while it is True |
+| `Run` | item | Button or toggle - one click creates the layouts, as soon as the button is released |
 | `Template` | list | Template layout(s) - names (case-insensitive) or numbers (`1` = first layout). With `TemplateFile`: layouts of **that** file |
 | `Names` | tree | Names of the **new layouts to create in this file** - a list or a tree. Only these are added |
 | `TemplateFile` | item | Optional. Full path of the `.3dm` file that holds the template. Empty = use a layout of this file |
@@ -115,6 +115,12 @@ How it works:
 - Not compiled here (no Rhino) - test in Grasshopper, first on a copy of the file.
 
 ### Changelog
+
+**v2.5** (2026-11-18)
+- **Fix - Run button froze and needed a second click.** The layouts were made inside the Grasshopper
+  solution while the button was held, so Grasshopper never saw the release. `Run` now only queues the
+  job; it runs on Rhino's Idle event once the mouse button is up, then the component refreshes to
+  show the `Report` and its messages.
 
 **v2.4** (2026-10-29)
 - **Fix - names lost on copy.** Detail views only got the name as their *title*; they now get every
