@@ -1,7 +1,7 @@
 #region Visual Meta Data
 // Component Name : AI Export (Tree)
 // Nickname       : AI Export
-// Version        : 1.4.1
+// Version        : 1.0.0
 // Date           : 2026-11-18
 // Category       : Export / Illustrator
 // Target Platform: Rhino 8 (C# Script Editor / Roslyn engine), Grasshopper 1
@@ -20,17 +20,11 @@
 //   Log          Summary plus one line per branch.
 // Color priority : 1. 'Colors' input -> 2. Rhino object color -> 3. Rhino layer color -> 4. Black
 // Changelog:
-//   1.4.1  Pin tooltips on every input/output (set by name). The active view is restored after the
-//          export (it used to stay on Top). The temporary bake + delete of all branches is grouped into
-//          one undo record instead of one step per object. Author: Rajeev Pulari.
-//   1.4.0  The component now sets its own Name, NickName, Description and Message (version tag under it).
-//   1.3.0  Fixed the button freezing (needing a second click): the export no longer runs inside the
-//          Grasshopper solution while the button is held. Press arms it, release queues it, and it runs
-//          on Rhino's Idle event once the solution is finished; the component then refreshes its outputs.
-//   1.2.0  Geometries as a tree + FileNames as a list: one file per branch, names paired in order.
-//   1.1.0  Added FileNames input (extension added automatically, invalid characters replaced).
-//          Fixed AI export options (PreserveUnits=Yes) so 0,0 and 1:1 scale are kept.
-//   1.0.0  First version.
+//   1.0.0  First release in Bullbull (model branch). Geometries tree -> one .ai file per branch with names
+//          from FileNames; 1:1 export with PreserveUnits=Yes (0,0 kept); colors from the Colors input,
+//          else Rhino object / layer color; export runs on button release via Rhino's Idle event (no
+//          freeze); sets its own name, nickname, description, message and pin tooltips; restores the
+//          active view; temporary bake grouped in one undo record. Author: Rajeev Pulari.
 #endregion
 
 using System;
@@ -53,7 +47,7 @@ public class Script_Instance : GH_ScriptInstance
     private const string ComponentName = "AI Export (Tree)";
     private const string ComponentNickName = "AI Export";
     private const string ComponentDescription = "Exports a geometry tree to Adobe Illustrator (.ai), one file per branch, at 1:1 in model units, keeping Rhino object/layer colors unless overridden.";
-    private const string ComponentMessage = "v1.4.1";
+    private const string ComponentMessage = "v1.0.0";
 
     // Button state between solutions: pressed -> armed, released -> queued for Idle
     private bool _armed;

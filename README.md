@@ -20,7 +20,7 @@ Back to the index: [`main`](https://github.com/pularirajeev77-bit/Bullbull/tree/
 
 ## AIExport
 
-**File:** `AIExport.cs` &middot; Component name: *AI Export (Tree)* &middot; v1.4.1
+**File:** `AIExport.cs` &middot; Component name: *AI Export (Tree)* &middot; v1.0.0
 
 Exports geometry and annotations to **Adobe Illustrator (.ai)**, **one file per branch**, at 1:1 in
 model units. Colors come from the `Colors` input, otherwise from the Rhino object, then its layer,
@@ -52,10 +52,6 @@ Rhino geometry is matched by its object ID; plain copies are matched by shape an
 - Not compiled here (no Rhino) - test in Grasshopper.
 
 **Changelog**
-- **v1.4.1** (2026-11-18) - Tooltips on every pin; active view restored after export; temporary
-  objects grouped in one undo record.
-- **v1.4.0** - Sets its own name, nickname, description and message.
-- **v1.3.0** - Fixed the button freeze: export runs on Rhino's Idle event after release.
-- **v1.2.0** - Geometries as a tree, one file per branch, names paired in order.
-- **v1.1.0** - FileNames input; `PreserveUnits=Yes` keeps 0,0 and 1:1.
-- **v1.0.0** - First version.
+- **v1.0.0** (2026-11-18) - First release in Bullbull: one .ai file per branch, 1:1 with 0,0 kept,
+  Rhino or input colors, export on button release (no freeze), tooltips on every pin, active view
+  restored, temporary objects in one undo record.
