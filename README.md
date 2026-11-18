@@ -27,7 +27,7 @@ topic into branches — switch branch to see the code and full instructions.
 | [`subd`](https://github.com/pularirajeev77-bit/Bullbull/tree/subd) | SubDCrease |
 | [`layout`](https://github.com/pularirajeev77-bit/Bullbull/tree/layout) | LFT |
 | [`Annotation`](https://github.com/pularirajeev77-bit/Bullbull/tree/Annotation) | AutoDim, SecMark, DetMark |
-| [`model`](https://github.com/pularirajeev77-bit/Bullbull/tree/model) | *(new - no components yet)* |
+| [`model`](https://github.com/pularirajeev77-bit/Bullbull/tree/model) | AI Export |
 
 ## All components
 
@@ -113,6 +113,7 @@ topic into branches — switch branch to see the code and full instructions.
 | AutoDim | `Annotation` | Automatically dimensions curves, lines, polylines and arcs without overlaps |
 | SecMark | `Annotation` | Plan section mark: section line, two arrow flags and a label on a plane, plus its clip plane |
 | DetMark | `Annotation` | Detail mark: circle, tail with arrow flag and label on a plane, plus a clip plane |
+| AI Export | `model` | Exports a geometry tree to Adobe Illustrator (.ai), one file per branch, 1:1, keeping Rhino colors |
 
 ## How to use a script
 
