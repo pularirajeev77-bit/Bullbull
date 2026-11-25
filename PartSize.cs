@@ -1,11 +1,13 @@
 /*
-  Author: Rajeev Pulari + ChatGPT
+  Author: Rajeev Pulari + Claude
   Rhino 8 | Grasshopper C#
-  Version: 2026.04.05
+  Version: 2026.11.25
   Component: partSize
   Description:
     Calculates length, width, and height of a Box (in millimeters).
     Auto-adaptive for Item, List, or Tree input.
+    Round: None (default, 2 decimals) | Nearest | Floor | Ceiling
+           accepts the name or 0 / 1 / 2 / 3.
 */
 
 using System;
@@ -20,17 +22,20 @@ public class Script_Instance : GH_ScriptInstance
     // Professional Signature: Use out object for modern Rhino 8 output mapping
     private void RunScript(
 		object Box,
+		object Round,
 		ref object Length,
 		ref object Width,
 		ref object Height)
     {
-    SetPinTips();   // pin tooltips (set once, matched by name)
+        // 1. Read the rounding mode (None when nothing is connected)
+        string mode = ReadRoundMode(Round);
 
-        // 1. Set Component Metadata (Rhino 8 Native)
+        // Set Component Metadata (Rhino 8 Native)
         // Check prevents unnecessary UI refreshes which can disrupt data tree flows
-        if (this.Component != null && this.Component.Message != "Part Size v2.0")
+        string msg = mode == "None" ? "Part Size v2.1" : "Part Size v2.1 | " + mode;
+        if (this.Component != null && this.Component.Message != msg)
         {
-            this.Component.Message = "Part Size v2.0";
+            this.Component.Message = msg;
             this.Component.NickName = "PSize";
         }
 
@@ -85,9 +90,9 @@ public class Script_Instance : GH_ScriptInstance
                     double dz = Math.Abs(pt2.Z - pt1.Z);
 
                     // Sort Max as Length, Min as Width (Native Logic)
-                    lengths.Add(Math.Round(Math.Max(dx, dy), 2));
-                    widths.Add(Math.Round(Math.Min(dx, dy), 2));
-                    heights.Add(Math.Round(dz, 2));
+                    lengths.Add(ApplyRound(Math.Max(dx, dy), mode));
+                    widths.Add(ApplyRound(Math.Min(dx, dy), mode));
+                    heights.Add(ApplyRound(dz, mode));
                 }
             }
         }
@@ -103,6 +108,35 @@ public class Script_Instance : GH_ScriptInstance
         Length = lengths;
         Width = widths;
         Height = heights;
+    }
+
+    // ---------------------------------------------------------------
+    // Round mode from a name (None / Nearest / Floor / Ceiling) or 0..3
+    private string ReadRoundMode(object input)
+    {
+        if (input == null) return "None";
+        string s = input.ToString().Trim().ToLowerInvariant();
+        switch (s)
+        {
+            case "1": case "nearest": case "round": return "Nearest";
+            case "2": case "floor": return "Floor";
+            case "3": case "ceiling": case "ceil": return "Ceiling";
+            default: return "None";
+        }
+    }
+
+    // Apply the round mode to one value (whole millimetres)
+    private double ApplyRound(double v, string mode)
+    {
+        // Clean float noise first so 120.0000001 does not ceil to 121
+        double clean = Math.Round(v, 6);
+        switch (mode)
+        {
+            case "Nearest": return Math.Round(clean, MidpointRounding.AwayFromZero);
+            case "Floor":   return Math.Floor(clean);
+            case "Ceiling": return Math.Ceiling(clean);
+            default:        return Math.Round(v, 2);   // None: unchanged behaviour
+        }
     }
 
     // ---------------------------------------------------------------
@@ -141,33 +175,4 @@ public class Script_Instance : GH_ScriptInstance
 
         return tree;
     }
-
-  // ---------------------------------------------------------------- pin tooltips
-  private bool _pinTipsSet = false;
-
-  private void SetPinTips()
-  {
-    if (_pinTipsSet || Component == null) return;
-    _pinTipsSet = true;
-    TipPin(Component.Params.Input, "Box", "The box(es) to measure (item, list or tree)");
-    TipPin(Component.Params.Output, "Length", "The larger of the two base edges.");
-    TipPin(Component.Params.Output, "Width", "The smaller of the two base edges.");
-    TipPin(Component.Params.Output, "Height", "The box height (its Z size in the box's own frame)");
-  }
-
-  // Match pins by Name (the script variable), fall back to NickName.
-  // Only NickName/Description are changed - never Name.
-  private void TipPin(System.Collections.Generic.IList<Grasshopper.Kernel.IGH_Param> ps, string name, string tip)
-  {
-    if (ps == null) return;
-    Grasshopper.Kernel.IGH_Param hit = null;
-    foreach (Grasshopper.Kernel.IGH_Param p in ps)
-      if (string.Equals(p.Name, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
-    if (hit == null)
-      foreach (Grasshopper.Kernel.IGH_Param p in ps)
-        if (string.Equals(p.NickName, name, System.StringComparison.OrdinalIgnoreCase)) { hit = p; break; }
-    if (hit == null) return;
-    hit.NickName = name;
-    hit.Description = tip;
-  }
 }
