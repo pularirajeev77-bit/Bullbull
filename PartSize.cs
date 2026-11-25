@@ -5,6 +5,7 @@
   Component: partSize
   Description:
     Calculates length, width, and height of a Box (in millimeters).
+    Sizes are measured along the box's own axes, so oriented boxes work.
     Auto-adaptive for Item, List, or Tree input.
     Round: None (default, 2 decimals) | Nearest | Floor | Ceiling
            accepts the name or 0 / 1 / 2 / 3.
@@ -32,11 +33,12 @@ public class Script_Instance : GH_ScriptInstance
 
         // Set Component Metadata (Rhino 8 Native)
         // Check prevents unnecessary UI refreshes which can disrupt data tree flows
-        string msg = mode == "None" ? "Part Size v2.1" : "Part Size v2.1 | " + mode;
+        string msg = mode == "None" ? "Part Size v2.2" : "Part Size v2.2 | " + mode;
         if (this.Component != null && this.Component.Message != msg)
         {
             this.Component.Message = msg;
             this.Component.NickName = "PSize";
+            this.Component.Name = "PartSize";
         }
 
         // 2. Prepare output containers
@@ -72,22 +74,11 @@ public class Script_Instance : GH_ScriptInstance
                         continue;
                     }
 
-                    Point3d[] corners = bx.GetCorners();
-                    if (corners == null || corners.Length < 8)
-                    {
-                        lengths.Add(double.NaN);
-                        widths.Add(double.NaN);
-                        heights.Add(double.NaN);
-                        continue;
-                    }
-
-                    // Geometry Logic: pt1 to pt2 diagonal calculation
-                    Point3d pt1 = corners[0];
-                    Point3d pt2 = corners[6];
-
-                    double dx = Math.Abs(pt2.X - pt1.X);
-                    double dy = Math.Abs(pt2.Y - pt1.Y);
-                    double dz = Math.Abs(pt2.Z - pt1.Z);
+                    // Geometry Logic: measure along the box's own plane axes
+                    // (world dX/dY of the diagonal is wrong when the box is rotated)
+                    double dx = bx.X.Length;
+                    double dy = bx.Y.Length;
+                    double dz = bx.Z.Length;
 
                     // Sort Max as Length, Min as Width (Native Logic)
                     lengths.Add(ApplyRound(Math.Max(dx, dy), mode));
